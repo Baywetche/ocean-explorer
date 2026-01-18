@@ -1,13 +1,10 @@
-package com.hhs.ocean_explorer.util;
+package com.hhs.shipapp.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.hhs.ocean_explorer.models.Echo;
-import com.hhs.ocean_explorer.models.ShipMessage;
+import com.hhs.shipapp.models.ShipMessage;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.List;
 
 @Component
 public class ResponseManager {

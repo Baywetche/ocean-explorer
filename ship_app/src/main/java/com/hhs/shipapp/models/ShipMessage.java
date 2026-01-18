@@ -1,7 +1,8 @@
-package com.hhs.ocean_explorer.models;
+package com.hhs.shipapp.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hhs.ocean_explorer.models.enums.*;
+import com.hhs.lib.model.Sector;
+import com.hhs.shipapp.models.enums.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

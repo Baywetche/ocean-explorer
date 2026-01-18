@@ -17,15 +17,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ship")
-public class ShipController {
+public class ShipAppController {
 
     private final ShipAppImpl shipAppImpl;
     private final ShipTransportMessage shipTransportMessage;
-    private NavigableDirections navigableOrientation;
     private Vec2D sectorAtShipPosition;
     private Vec2D shipDirection;
 
-    public ShipController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage) {
+    public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage) {
         this.shipAppImpl = shipAppImpl;
         this.shipTransportMessage = shipTransportMessage;
     }
@@ -34,9 +33,10 @@ public class ShipController {
     public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
                                                     @RequestParam int dx, @RequestParam int dy) {
 
+        //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt dann ein Schiff erstellen und anschließend den User mit "true" informieren
+
         sectorAtShipPosition = new Vec2D(x, y);
         shipDirection = new Vec2D(dx, dy);
-
 
         List<ShipMessage> shipMessages = shipAppImpl.launch(name, sectorAtShipPosition, shipDirection);
 

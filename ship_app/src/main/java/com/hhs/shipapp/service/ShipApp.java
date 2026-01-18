@@ -1,7 +1,7 @@
-package com.hhs.ocean_explorer.service;
+package com.hhs.shipapp.service;
 
-import com.hhs.ocean_explorer.models.ShipMessage;
-import com.hhs.ocean_explorer.models.Vec2D;
+import com.hhs.lib.model.Vec2D;
+import com.hhs.shipapp.models.ShipMessage;
 
 import java.util.List;
 

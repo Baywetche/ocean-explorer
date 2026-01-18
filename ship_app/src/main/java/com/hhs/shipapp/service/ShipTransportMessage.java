@@ -1,10 +1,8 @@
-package com.hhs.ocean_explorer.service;
+package com.hhs.shipapp.service;
 
-import com.hhs.ocean_explorer.models.MessageDTO;
-import com.hhs.ocean_explorer.models.SectorInfo;
-import com.hhs.ocean_explorer.models.enums.Ground;
+import com.hhs.shipapp.models.SectorInfo;
+import com.hhs.lib.model.Ground;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestClient;
 
 @Service
@@ -16,12 +14,38 @@ public class ShipTransportMessage {
     RestClient restClient = RestClient.create();
 
     String response = restClient.post()
-        .uri(shipBaseServerAPI + "/message")
+        .uri(shipBaseServerAPI + "/saveSectorInfo")
         .body(new SectorInfo("#10#ship", Ground.Water, 4, 2, 3))
         .retrieve()
         .body(String.class);
 
     System.out.println("Antwort vom Server: " + response);
+  }
+
+  public boolean isSectorInfoExist(SectorInfo sectorInfo) {
+    RestClient restClient = RestClient.create();
+    boolean response = Boolean.TRUE.equals(restClient.post()
+                                                     .uri(shipBaseServerAPI + "/findSectorInfo")
+                                                     .body(sectorInfo)
+                                                     .retrieve()
+                                                     .body(boolean.class));
+
+    System.out.println("Antwort vom Server: " + "sector exist: " + response);
+
+    return response;
+  }
+
+  public boolean isSectorInUse(SectorInfo sectorInfo) {
+    RestClient restClient = RestClient.create();
+    boolean response = Boolean.TRUE.equals(restClient.post()
+                                                     .uri(shipBaseServerAPI + "/findIfSectorInUse")
+                                                     .body(sectorInfo)
+                                                     .retrieve()
+                                                     .body(boolean.class));
+
+    System.out.println("Antwort vom Server: " + "sector exist: " + response);
+
+    return response;
   }
 
 }

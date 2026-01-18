@@ -1,6 +1,7 @@
-package com.hhs.ocean_explorer.models;
+package com.hhs.shipapp.models;
 
-import com.hhs.ocean_explorer.models.enums.Ground;
+import com.hhs.lib.model.Sector;
+import com.hhs.lib.model.Ground;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

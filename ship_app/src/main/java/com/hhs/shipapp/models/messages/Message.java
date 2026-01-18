@@ -1,7 +1,7 @@
-package com.hhs.ocean_explorer.models.messages;
+package com.hhs.shipapp.models.messages;
 
-import com.hhs.ocean_explorer.models.enums.Commands;
-import com.hhs.ocean_explorer.models.enums.MessageType;
+import com.hhs.shipapp.models.enums.Commands;
+import com.hhs.shipapp.models.enums.MessageType;
 import lombok.Data;
 
 @Data

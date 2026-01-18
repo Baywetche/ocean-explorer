@@ -1,7 +1,7 @@
-package com.hhs.ocean_explorer.models.messages;
+package com.hhs.shipapp.models.messages;
 
-import com.hhs.ocean_explorer.models.AbsolutePosition;
-import com.hhs.ocean_explorer.models.enums.Commands;
+import com.hhs.shipapp.models.AbsolutePosition;
+import com.hhs.shipapp.models.enums.Commands;
 import lombok.Data;
 
 @Data

@@ -1,4 +1,4 @@
-package com.hhs.ocean_explorer.models.enums;
+package com.hhs.shipapp.models.enums;
 
 public enum Rudder {
   Left,		// links,Backbord, portside

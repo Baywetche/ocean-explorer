@@ -1,7 +1,7 @@
-package com.hhs.ocean_explorer.connection;
+package com.hhs.shipapp.connection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hhs.ocean_explorer.models.ShipMessage;
+import com.hhs.shipapp.models.ShipMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
