@@ -1,4 +1,4 @@
-package com.hhs.shipapp.models.enums;
+package com.hhs.lib.model;
 
 public enum Ground {
   Water,

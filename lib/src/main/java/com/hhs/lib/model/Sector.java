@@ -1,4 +1,4 @@
-package com.hhs.shipapp.models;
+package com.hhs.lib.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
