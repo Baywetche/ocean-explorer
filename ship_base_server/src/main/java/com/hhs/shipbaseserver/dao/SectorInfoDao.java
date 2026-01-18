@@ -1,8 +1,7 @@
-package com.hhs.ship_base_server.dao;
+package com.hhs.shipbaseserver.dao;
 
-import com.hhs.ship_base_server.model.SectorInfo;
-import com.hhs.ship_base_server.repository.SectorInfoRepository;
-import lombok.AllArgsConstructor;
+import com.hhs.shipbaseserver.model.SectorInfo;
+import com.hhs.shipbaseserver.repository.SectorInfoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,13 +16,20 @@ public class SectorInfoDao {
     this.sectorInfoRepository = sectorInfoRepository;
   }
 
-  public SectorInfo save(SectorInfo sectorInfo) {
-    return sectorInfoRepository.save(sectorInfo);
+  public boolean save(SectorInfo sectorInfo) {
+    if (!sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty()) return false;
 
+    sectorInfoRepository.save(sectorInfo);
+
+    return true;
   }
 
   private List<SectorInfo> getAllSectorInfos() {
     return sectorInfoRepository.findAll();
+  }
+
+  public boolean findBySector(SectorInfo sectorInfo) {
+    return !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
   }
 
   public SectorInfo getSectorInfoById(String id) throws ClassNotFoundException {

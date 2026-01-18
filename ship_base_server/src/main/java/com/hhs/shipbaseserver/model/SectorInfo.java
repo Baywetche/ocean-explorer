@@ -1,4 +1,4 @@
-package com.hhs.ship_base_server.model;
+package com.hhs.shipbaseserver.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,7 +17,7 @@ public class SectorInfo {
   private String shipId;
   private Ground ground;
   private int depth;
-  private int x;
-  private int y;
+  private int sectorX;
+  private int sectorY;
 
 }

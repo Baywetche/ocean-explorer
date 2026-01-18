@@ -1,4 +1,4 @@
-package com.hhs.ship_base_server;
+package com.hhs.shipbaseserver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

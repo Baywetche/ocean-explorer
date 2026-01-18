@@ -1,4 +1,4 @@
-package com.hhs.ship_base_server.model;
+package com.hhs.shipbaseserver.model;
 
 public enum Ground {
   Water,

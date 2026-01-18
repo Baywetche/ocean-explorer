@@ -1,4 +1,4 @@
-package com.hhs.ship_base_server.service;
+package com.hhs.shipbaseserver.service;
 
 public class ShipBaseServer {
 
