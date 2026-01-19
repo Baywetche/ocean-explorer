@@ -83,10 +83,10 @@ public class ShipBaseServerController {
   }
 
   /**
-   * @return {@code true} if sector not already in use by other ship, otherwise {@code false}
+   * @return {@code true} if sector available (not in use by other ship), otherwise {@code false}
    */
   @DeleteMapping(value = "/findIfSectorInUse")
-  public ResponseEntity<Boolean> isSectorInUse(@RequestBody Vec2D sector) {
+  public ResponseEntity<Boolean> isSectorAvailable(@RequestBody Vec2D sector) {
     System.out.println("Empfangen: " + sector);
 
     return shipDataDao.findBySector(sector);
