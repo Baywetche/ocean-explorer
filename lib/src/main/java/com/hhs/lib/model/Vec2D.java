@@ -96,7 +96,7 @@ public class Vec2D {
     Vec2D other = (Vec2D) obj;
     return x == other.x && y == other.y;
   }
-  public JSONObject toJson() { // String key, JSONObject jo){
+  public JSONObject toJson() throws JSONException { // String key, JSONObject jo){
     JSONObject jo = new JSONObject();
     jo.put("vec2", toJsonArray());
     return jo;
@@ -127,11 +127,11 @@ public class Vec2D {
     return neighbours;
   }
 
-  public static Vec2D fromJson(String json) {
+  public static Vec2D fromJson(String json) throws JSONException {
     return fromJson(new JSONObject(json));
   }
 
-  public static Vec2D fromJson(JSONArray ja) {
+  public static Vec2D fromJson(JSONArray ja) throws JSONException {
     if(ja.length()==2) {
       return new Vec2D(ja.getInt(0), ja.getInt(1));
     } else {
@@ -140,7 +140,7 @@ public class Vec2D {
     return null;
   }
 
-  public static Vec2D fromJson(JSONObject jo) {
+  public static Vec2D fromJson(JSONObject jo) throws JSONException {
     try {
       JSONArray jvec = jo.getJSONArray("vec2");
       return new Vec2D(jvec.getInt(0), jvec.getInt(1));

@@ -16,30 +16,33 @@ import java.util.List;
  */
 public class RelativeCoordinateSystem {
 
-    private List<Vec2D> coordinates;
+  private List<Vec2D> coordinates;
 
+  /**
+   * Erzeugt ein neues Koordinatensystem, bei dem der übergebene Vektor zur neuen
+   * Norden-Richtung (Index 0) wird.
+   */
+  public RelativeCoordinateSystem(Vec2D vec2D) {
+    coordinates = new ArrayList<>(List.of(
+        new Vec2D(0, 1),
+        new Vec2D(1, 1),
+        new Vec2D(1, 0),
+        new Vec2D(1, -1),
+        new Vec2D(0, -1),
+        new Vec2D(-1, -1),
+        new Vec2D(-1, 0),
+        new Vec2D(-1, 1)
+    ));
 
-    public RelativeCoordinateSystem(Vec2D vec2D) {
-        coordinates = new ArrayList<>(List.of(
-                new Vec2D(0, 1),
-                new Vec2D(1, 1),
-                new Vec2D(1, 0),
-                new Vec2D(1, -1),
-                new Vec2D(0, -1),
-                new Vec2D(-1, -1),
-                new Vec2D(-1, 0),
-                new Vec2D(-1, 1)
-        ));
-
-        int index = coordinates.indexOf(vec2D);
-        if (index > 0) {
-            List<Vec2D> rotated = coordinates.subList(index, coordinates.size());
-            rotated.addAll(coordinates.subList(0, index));
-            coordinates = new ArrayList<>(rotated);
-        }
+    int index = coordinates.indexOf(vec2D);
+    if (index > 0) {
+      List<Vec2D> rotated = coordinates.subList(index, coordinates.size());
+      rotated.addAll(coordinates.subList(0, index));
+      coordinates = new ArrayList<>(rotated);
     }
+  }
 
-    public List<Vec2D> getCoordinates() {
-        return coordinates;
-    }
+  public List<Vec2D> getCoordinates() {
+    return coordinates;
+  }
 }

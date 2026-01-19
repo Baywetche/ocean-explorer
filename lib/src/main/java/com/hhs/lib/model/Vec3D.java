@@ -99,7 +99,7 @@ public class Vec3D {
     return x == other.x && y == other.y && z == other.z;
   }
 
-  public JSONObject toJson() { // String key, JSONObject jo){
+  public JSONObject toJson() throws JSONException { // String key, JSONObject jo){
     JSONObject jo = new JSONObject();
     jo.put("vec", toJsonArray());
     return jo;
@@ -113,11 +113,11 @@ public class Vec3D {
     return vec;
   }
 
-  public static Vec3D fromJson(String json) {
+  public static Vec3D fromJson(String json) throws JSONException {
     return fromJson(new JSONObject(json));
   }
 
-  public static Vec3D fromJson(JSONArray ja) {
+  public static Vec3D fromJson(JSONArray ja) throws JSONException {
     if(ja.length()==3) {
       return new Vec3D(ja.getInt(0), ja.getInt(1), ja.getInt(2));
     } else {
@@ -126,7 +126,7 @@ public class Vec3D {
     return null;
   }
 
-  public static Vec3D fromJson(JSONObject jo) {
+  public static Vec3D fromJson(JSONObject jo) throws JSONException {
     try {
       JSONArray jvec = jo.getJSONArray("vec");
       return new Vec3D(jvec.getInt(0), jvec.getInt(1), jvec.getInt(2));
