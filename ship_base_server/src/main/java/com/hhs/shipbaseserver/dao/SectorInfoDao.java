@@ -2,6 +2,8 @@ package com.hhs.shipbaseserver.dao;
 
 import com.hhs.shipbaseserver.model.SectorInfo;
 import com.hhs.shipbaseserver.repository.SectorInfoRepository;
+import org.apache.coyote.Response;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,20 +18,30 @@ public class SectorInfoDao {
     this.sectorInfoRepository = sectorInfoRepository;
   }
 
-  public boolean save(SectorInfo sectorInfo) {
-    if (!sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty()) return false;
+  public ResponseEntity<Boolean> save(SectorInfo sectorInfo) {
+
+    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
+
+    if (exists) {
+      return ResponseEntity.ok(false);
+    }
 
     sectorInfoRepository.save(sectorInfo);
-
-    return true;
+    return ResponseEntity.ok(true);
   }
 
-  private List<SectorInfo> getAllSectorInfos() {
+  public List<SectorInfo> getAllSectorInfos() {
     return sectorInfoRepository.findAll();
   }
 
-  public boolean findBySector(SectorInfo sectorInfo) {
-    return !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
+  public ResponseEntity<Boolean> findBySector(SectorInfo sectorInfo) {
+    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
+
+    if (exists){
+      return ResponseEntity.ok(false);
+    }
+
+    return ResponseEntity.ok(true);
   }
 
   public SectorInfo getSectorInfoById(String id) throws ClassNotFoundException {
