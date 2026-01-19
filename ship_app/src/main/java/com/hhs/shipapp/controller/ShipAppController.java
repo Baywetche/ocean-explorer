@@ -3,6 +3,7 @@ package com.hhs.shipapp.controller;
 import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.models.NavigableOrientation;
 import com.hhs.shipapp.models.ShipMessage;
+import com.hhs.shipapp.models.enums.Commands;
 import com.hhs.shipapp.models.enums.NavigableDirections;
 import com.hhs.shipapp.service.ShipAppImpl;
 import com.hhs.shipapp.service.ShipTransportMessage;
@@ -19,68 +20,62 @@ import java.util.List;
 @RequestMapping("/api/ship")
 public class ShipAppController {
 
-    private final ShipAppImpl shipAppImpl;
-    private final ShipTransportMessage shipTransportMessage;
-    private Vec2D sectorAtShipPosition;
-    private Vec2D shipDirection;
+  private final ShipAppImpl shipAppImpl;
+  private final ShipTransportMessage shipTransportMessage;
+  private Vec2D sectorAtShipPosition;
+  private Vec2D shipDirection;
 
-    public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage) {
-        this.shipAppImpl = shipAppImpl;
-        this.shipTransportMessage = shipTransportMessage;
-    }
+  public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage) {
+    this.shipAppImpl = shipAppImpl;
+    this.shipTransportMessage = shipTransportMessage;
+  }
 
-    @PostMapping("/launch")
-    public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
-                                                    @RequestParam int dx, @RequestParam int dy) {
+  @PostMapping("/launch")
+  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
+      @RequestParam int dx, @RequestParam int dy) {
 
-        //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt dann ein Schiff erstellen und anschließend den User mit "true" informieren
+    //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt dann ein Schiff erstellen und anschließend den User mit "true" informieren
 
-        sectorAtShipPosition = new Vec2D(x, y);
-        shipDirection = new Vec2D(dx, dy);
+    sectorAtShipPosition = new Vec2D(x, y);
+    shipDirection = new Vec2D(dx, dy);
 
-        List<ShipMessage> shipMessages = shipAppImpl.launch(name, sectorAtShipPosition, shipDirection);
+    List<ShipMessage> shipMessages = shipAppImpl.launch(name, sectorAtShipPosition, shipDirection);
 
-        System.out.println(shipMessages.getFirst());
-        System.out.println(shipMessages.getLast());
+    return ResponseEntity.ok("Success");
+  }
 
-        return ResponseEntity.ok("Success");
-    }
+  @PostMapping("/navigate")
+  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
 
-    @PostMapping("/navigate")
-    public ResponseEntity<List<ShipMessage>> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
+    List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
 
-        List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
+    shipDirection = Helper.updateShipDirection(shipMessages);
+    sectorAtShipPosition = Helper.updateSectorAtShipPosition(shipMessages);
 
-        String navigate = course + rudder;
-        String navigation = NavigableDirections.fromString(navigate);
+    return ResponseEntity.ok(shipMessages.getFirst().getCmd() != Commands.crash);
+  }
 
-        shipDirection = Helper.updateShipDirection(shipMessages);
-        sectorAtShipPosition = Helper.updateSectorAtShipPosition(sectorAtShipPosition, shipDirection, navigation);
+  @PostMapping("/radar")
+  public ResponseEntity<NavigableOrientation> radar(@RequestParam String shipId) {
+    List<ShipMessage> messages = shipAppImpl.radar();
+    //    shipTransportMessage.sendMessage();
 
-        return ResponseEntity.ok(shipMessages);
-    }
+    NavigableOrientation navigableOrientation =
+        NavigableOrientation.getNavigableOrientation(messages.getFirst(), sectorAtShipPosition, shipDirection);
+    return ResponseEntity.ok(navigableOrientation);
+  }
 
-    @PostMapping("/exit")
-    public ResponseEntity<String> exit() {
-        shipAppImpl.exit();
-        return ResponseEntity.ok("sent exit");
-    }
+  @PostMapping("/exit")
+  public ResponseEntity<String> exit(@RequestParam String shipId) {
+    shipAppImpl.exit();
+    return ResponseEntity.ok("sent exit");
+  }
 
-    @PostMapping("/scan")
-    public ResponseEntity<List<ShipMessage>> scan() {
-        List<ShipMessage> messages = shipAppImpl.scan();
-        return ResponseEntity.ok(messages);
-    }
-
-    @PostMapping("/radar")
-    public ResponseEntity<NavigableOrientation> radar() {
-        List<ShipMessage> messages = shipAppImpl.radar();
-//    shipTransportMessage.sendMessage();
-
-        NavigableOrientation navigableOrientation = NavigableOrientation.getNavigableOrientation(messages.getFirst(),
-                                                                                                 sectorAtShipPosition);
-        return ResponseEntity.ok(navigableOrientation);
-    }
+  @PostMapping("/scan")
+  public ResponseEntity<List<ShipMessage>> scan(@RequestParam String shipId) {
+    List<ShipMessage> messages = shipAppImpl.scan();
+    return ResponseEntity.ok(messages);
+  }
 
 }
 
