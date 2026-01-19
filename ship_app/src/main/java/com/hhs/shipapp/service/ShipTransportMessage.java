@@ -1,5 +1,6 @@
 package com.hhs.shipapp.service;
 
+import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.models.SectorInfo;
 import com.hhs.lib.model.Ground;
 import org.springframework.stereotype.Service;
@@ -35,11 +36,11 @@ public class ShipTransportMessage {
     return response;
   }
 
-  public boolean isSectorInUse(SectorInfo sectorInfo) {
+  public boolean isSectorFree(Vec2D sector) {
     RestClient restClient = RestClient.create();
     boolean response = Boolean.TRUE.equals(restClient.post()
                                                      .uri(shipBaseServerAPI + "/findIfSectorInUse")
-                                                     .body(sectorInfo)
+                                                     .body(sector)
                                                      .retrieve()
                                                      .body(boolean.class));
 

@@ -5,6 +5,7 @@ import com.hhs.shipapp.models.NavigableOrientation;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
 import com.hhs.shipapp.models.enums.NavigableDirections;
+import com.hhs.shipapp.models.messages.Launched;
 import com.hhs.shipapp.service.ShipAppImpl;
 import com.hhs.shipapp.service.ShipTransportMessage;
 import com.hhs.shipapp.util.Helper;
@@ -31,21 +32,27 @@ public class ShipAppController {
   }
 
   @PostMapping("/launch")
-  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
-      @RequestParam int dx, @RequestParam int dy) {
+  public ResponseEntity<Launched> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
+                                         @RequestParam int dx, @RequestParam int dy) {
 
-    //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt dann ein Schiff erstellen und anschließend den User mit "true" informieren
+    //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt dann ein Schiff
+    // erstellen und anschließend den User mit "true" informieren
 
     sectorAtShipPosition = new Vec2D(x, y);
     shipDirection = new Vec2D(dx, dy);
 
-    List<ShipMessage> shipMessages = shipAppImpl.launch(name, sectorAtShipPosition, shipDirection);
+    if (shipTransportMessage.isSectorFree(sectorAtShipPosition)){
+      List<ShipMessage> shipMessages = shipAppImpl.launch(name, sectorAtShipPosition, shipDirection);
 
-    return ResponseEntity.ok("Success");
+      return ResponseEntity.ok(Helper.getLaunched(shipMessages));
+    }
+
+    return ResponseEntity.ok(null);
   }
 
   @PostMapping("/navigate")
-  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
+  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course,
+                                          @RequestParam String rudder) {
 
     List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
 
@@ -60,8 +67,9 @@ public class ShipAppController {
     List<ShipMessage> messages = shipAppImpl.radar();
     //    shipTransportMessage.sendMessage();
 
-    NavigableOrientation navigableOrientation =
-        NavigableOrientation.getNavigableOrientation(messages.getFirst(), sectorAtShipPosition, shipDirection);
+    NavigableOrientation navigableOrientation = NavigableOrientation.getNavigableOrientation(messages.getFirst(),
+                                                                                             sectorAtShipPosition,
+                                                                                             shipDirection);
     return ResponseEntity.ok(navigableOrientation);
   }
 
