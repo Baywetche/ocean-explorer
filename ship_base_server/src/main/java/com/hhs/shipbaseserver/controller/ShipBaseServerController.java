@@ -1,10 +1,10 @@
 package com.hhs.shipbaseserver.controller;
 
+import com.hhs.lib.model.SectorInfo;
 import com.hhs.lib.model.ShipData;
 import com.hhs.lib.model.Vec2D;
 import com.hhs.shipbaseserver.dao.SectorInfoDao;
 import com.hhs.shipbaseserver.dao.ShipDataDao;
-import com.hhs.shipbaseserver.model.SectorInfo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

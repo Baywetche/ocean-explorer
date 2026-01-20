@@ -1,8 +1,7 @@
 package com.hhs.shipbaseserver.dao;
 
-import com.hhs.shipbaseserver.model.SectorInfo;
+import com.hhs.lib.model.SectorInfo;
 import com.hhs.shipbaseserver.repository.SectorInfoRepository;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,7 @@ public class SectorInfoDao {
   public ResponseEntity<Boolean> findBySector(SectorInfo sectorInfo) {
     boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
 
-    if (exists){
+    if (exists) {
       return ResponseEntity.ok(false);
     }
 
