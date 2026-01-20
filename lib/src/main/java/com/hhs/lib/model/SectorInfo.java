@@ -17,7 +17,7 @@ public class SectorInfo {
   private String shipId;
   private Ground ground;
   private int depth;
-  private int x;
-  private int y;
+  private int sectorX;
+  private int sectorY;
 
 }
