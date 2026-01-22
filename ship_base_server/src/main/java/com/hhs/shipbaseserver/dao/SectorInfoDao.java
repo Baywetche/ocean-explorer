@@ -1,6 +1,6 @@
 package com.hhs.shipbaseserver.dao;
 
-import com.hhs.lib.model.SectorInfo;
+import com.hhs.lib.model.SectorData;
 import com.hhs.shipbaseserver.repository.SectorInfoRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -17,24 +17,24 @@ public class SectorInfoDao {
     this.sectorInfoRepository = sectorInfoRepository;
   }
 
-  public ResponseEntity<Boolean> save(SectorInfo sectorInfo) {
+  public ResponseEntity<Boolean> save(SectorData sectorData) {
 
-    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
+    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY()).isEmpty();
 
     if (exists) {
       return ResponseEntity.ok(false);
     }
 
-    sectorInfoRepository.save(sectorInfo);
+    sectorInfoRepository.save(sectorData);
     return ResponseEntity.ok(true);
   }
 
-  public List<SectorInfo> getAllSectorInfos() {
+  public List<SectorData> getAllSectorInfos() {
     return sectorInfoRepository.findAll();
   }
 
-  public ResponseEntity<Boolean> findBySector(SectorInfo sectorInfo) {
-    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorInfo.getSectorX(), sectorInfo.getSectorY()).isEmpty();
+  public ResponseEntity<Boolean> findBySector(SectorData sectorData) {
+    boolean exists = !sectorInfoRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY()).isEmpty();
 
     if (exists) {
       return ResponseEntity.ok(false);
@@ -43,8 +43,8 @@ public class SectorInfoDao {
     return ResponseEntity.ok(true);
   }
 
-  public SectorInfo getSectorInfoById(String id) throws ClassNotFoundException {
-    Optional<SectorInfo> sectorInfo = sectorInfoRepository.findById(Long.valueOf(id));
+  public SectorData getSectorInfoById(String id) throws ClassNotFoundException {
+    Optional<SectorData> sectorInfo = sectorInfoRepository.findById(Long.valueOf(id));
     if (sectorInfo.isEmpty()) {
       throw new ClassNotFoundException("sector info not exist");
     }
