@@ -1,18 +1,20 @@
 package com.hhs.shipapp.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hhs.lib.model.Ground;
-import com.hhs.lib.model.RelativeCoordinateSystem;
 import com.hhs.lib.model.Sector;
 import com.hhs.lib.model.Vec2D;
+import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.*;
+import com.hhs.shipapp.models.enums.Course;
+import com.hhs.shipapp.models.enums.Rudder;
 import com.hhs.shipapp.models.messages.Launched;
 import com.hhs.shipapp.models.messages.RadarResponse;
 
-import java.io.DataInput;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Helper {
 
@@ -55,6 +57,40 @@ public class Helper {
 
   private static boolean isSectorNavigable(Echo echo) {
     return echo.getHeight() <= 0 && (echo.getGround() == Ground.Water || echo.getGround() == Ground.Harbour);
+  }
+
+  public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId, List<ShipMessage> shipMessages,
+      String course, String rudder) {
+    ShipEntityState state = shipEntityStateMap.get(shipId);
+
+    Course parsedCourse = Course.fromString(course);
+    Rudder parsedRudder = Rudder.fromString(rudder);
+
+    state.setDirection(Helper.updateShipDirection(shipMessages));
+    state.setSector(Helper.updateSectorAtShipPosition(shipMessages));
+    state.setCourse(parsedCourse);
+    state.setRudder(parsedRudder);
+
+    state.recordMove(state.getSector(), parsedCourse, parsedRudder);
+  }
+
+  public static ShipEntityState updateShipEntityStateMap(String shipId, String name, Vec2D sector, Vec2D direction) {
+    ShipEntityState state = new ShipEntityState();
+    state.setShipId(shipId);
+    state.setName(name);
+    state.setSector(sector);
+    state.setDirection(direction);
+
+    return state;
+  }
+
+  public static String extractShipNameFromShipId(String shipId) {
+    Pattern pattern = Pattern.compile("#\\d+#(.*)");
+    Matcher matcher = pattern.matcher(shipId);
+    if (matcher.find()) {
+      return matcher.group(1);
+    }
+    return null;
   }
 
 }

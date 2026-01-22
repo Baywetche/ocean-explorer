@@ -23,11 +23,10 @@ public class ShipAppImpl implements ShipApp {
 
   private ShipClientConnection clientConnection;
   private ResponseManager responseManager;
-  private List<ShipMessage> messages;
 
   @Override
   public List<ShipMessage> launch(String name, Vec2D sector, Vec2D shipDirection) {
-    messages = new ArrayList<>();
+    List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg =
         ShipMessage.builder().cmd(Commands.launch).name(name).sector(new Sector(sector)).typ(Typ.ship).dir(new Direction(shipDirection))
             .build();
@@ -49,7 +48,7 @@ public class ShipAppImpl implements ShipApp {
 
   @Override
   public List<ShipMessage> navigate(String course, String rudder) {
-    messages = new ArrayList<>();
+    List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.navigate).course(getCourse(course)).rudder(getRudder(rudder)).build();
     clientConnection.sendMessage2Server(msg);
 
@@ -84,7 +83,7 @@ public class ShipAppImpl implements ShipApp {
 
   @Override
   public List<ShipMessage> radar() {
-    messages = new ArrayList<>();
+    List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.radar).build();
     clientConnection.sendMessage2Server(msg);
     try {
@@ -100,7 +99,7 @@ public class ShipAppImpl implements ShipApp {
 
   @Override
   public List<ShipMessage> scan() {
-    messages = new ArrayList<>();
+    List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.scan).build();
     clientConnection.sendMessage2Server(msg);
 
