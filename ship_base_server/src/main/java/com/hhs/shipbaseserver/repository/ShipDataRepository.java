@@ -16,4 +16,6 @@ public interface ShipDataRepository extends JpaRepository<ShipData, Long> {
 
   boolean existsBySectorXAndSectorY(int sectorX, int sectorY);
 
+  void deleteByShipId(String shipId);
+
 }

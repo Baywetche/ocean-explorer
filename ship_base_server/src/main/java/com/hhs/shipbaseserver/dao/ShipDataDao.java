@@ -26,22 +26,21 @@ public class ShipDataDao {
     return ResponseEntity.ok(true);
   }
 
-  public ResponseEntity<Boolean> update(String shipId, ShipData shipData) {
-    Optional<ShipData> optionalShipData = shipDataRepository.findByShipId(shipId);
+  public ResponseEntity<Boolean> update(ShipData shipData) {
+    Optional<ShipData> optionalShipData = shipDataRepository.findByShipId(shipData.getShipId());
 
     if (optionalShipData.isEmpty()) {
       return ResponseEntity.ok(false);
     }
 
     ShipData newShipData = optionalShipData.get();
-    newShipData.setShipId(shipId);
-    newShipData.setShipName(shipData.getShipName());
     newShipData.setSectorX(shipData.getSectorX());
     newShipData.setSectorY(shipData.getSectorY());
     newShipData.setDirectionX(shipData.getDirectionX());
     newShipData.setDirectionY(shipData.getDirectionY());
 
-    save(newShipData);
+    shipDataRepository.save(newShipData);
+
     return ResponseEntity.ok(true);
   }
 
@@ -49,28 +48,30 @@ public class ShipDataDao {
     return !shipDataRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
   }
 
-  public ResponseEntity<Boolean> delete(ShipData shipData) {
-    if (shipDataRepository.findByShipId(shipData.getShipId()).isEmpty())
-      return ResponseEntity.ok(false);
+  public ResponseEntity<Boolean> delete(String shipId) {
+    if (shipDataRepository.findByShipId(shipId).isEmpty()) {return ResponseEntity.ok(false);}
 
-    shipDataRepository.delete(shipData);
+    shipDataRepository.deleteByShipId(shipId);
+
     return ResponseEntity.ok(true);
   }
 
 
-/*  public ResponseEntity<Boolean> findBySector(int sectorX, int sectorY) {
-    boolean sectorFree = shipDataRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
-
-    return ResponseEntity.ok(sectorFree);
-  }*/
-
   /**
    * sector liegt in datenbank vor -> sector ist belegt: false
-   *
+   * <p>
    * sector liegt in datenbank nicht vor -> sector ist frei: true
-   * */
+   */
   public ResponseEntity<Boolean> istSectorExist(int sectorX, int sectorY) {
     return ResponseEntity.ok(!shipDataRepository.existsBySectorXAndSectorY(sectorX, sectorY));
   }
 
+  public ResponseEntity<ShipData> getShipData(String shipId) {
+    Optional<ShipData> optionalShipData = shipDataRepository.findByShipId(shipId);
+    if (optionalShipData.isEmpty()) {
+      return ResponseEntity.ok(null);
+    }
+
+    return ResponseEntity.ok(optionalShipData.get());
+  }
 }

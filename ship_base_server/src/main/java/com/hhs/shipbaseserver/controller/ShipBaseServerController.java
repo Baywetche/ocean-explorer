@@ -2,8 +2,7 @@ package com.hhs.shipbaseserver.controller;
 
 import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
-import com.hhs.lib.model.Vec2D;
-import com.hhs.shipbaseserver.dao.SectorInfoDao;
+import com.hhs.shipbaseserver.dao.SectorDataDao;
 import com.hhs.shipbaseserver.dao.ShipDataDao;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +13,11 @@ import java.util.List;
 @RequestMapping("/shipBaseServerAPI")
 public class ShipBaseServerController {
 
-  private final SectorInfoDao sectorInfoDao;
+  private final SectorDataDao sectorDataDao;
   private final ShipDataDao shipDataDao;
 
-  public ShipBaseServerController(SectorInfoDao sectorInfoDao, ShipDataDao shipDataDao) {
-    this.sectorInfoDao = sectorInfoDao;
+  public ShipBaseServerController(SectorDataDao sectorDataDao, ShipDataDao shipDataDao) {
+    this.sectorDataDao = sectorDataDao;
     this.shipDataDao = shipDataDao;
   }
 
@@ -29,10 +28,17 @@ public class ShipBaseServerController {
    * @return {@code true} if the sector information was successfully saved, {@code false} otherwise
    */
   @PostMapping(value = "/saveSectorData")
-  public ResponseEntity<Boolean> saveSectorInfo(@RequestBody SectorData sectorData) {
+  public ResponseEntity<Boolean> saveSectorData(@RequestBody SectorData sectorData) {
     System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorInfoDao.save(sectorData);
+    return sectorDataDao.save(sectorData);
+  }
+
+  @PutMapping(value = "/updateSectorData")
+  public ResponseEntity<Boolean> updateSectorData(@RequestBody SectorData sectorData) {
+    System.out.println("Empfangen: " + sectorData.toString());
+
+    return sectorDataDao.update(sectorData);
   }
 
   /**
@@ -40,11 +46,11 @@ public class ShipBaseServerController {
    *
    * @return {@code true} if the sector exists, otherwise {@code false}
    */
-  @PostMapping(value = "/findSectorInfo") //TODO check, if works correctly
-  public ResponseEntity<Boolean> findSectorInfo(@RequestBody SectorData sectorData) {
+  @PostMapping(value = "/findSectorData") //TODO check, if works correctly
+  public ResponseEntity<Boolean> findSectorData(@RequestBody SectorData sectorData) {
     System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorInfoDao.findBySector(sectorData);
+    return sectorDataDao.findBySector(sectorData);
   }
 
   /**
@@ -52,9 +58,9 @@ public class ShipBaseServerController {
    *
    * @return a list of all {@link SectorData} objects
    */
-  @GetMapping(value = "/allSectorInfos") //TODO check, if works correctly
-  public List<SectorData> findAllSectorInfos() {
-    return sectorInfoDao.getAllSectorInfos();
+  @GetMapping(value = "/allSectorData") //TODO check, if works correctly
+  public List<SectorData> findAllSectorData() {
+    return sectorDataDao.getAllSectorData();
   }
 
   /**
@@ -72,19 +78,28 @@ public class ShipBaseServerController {
   }
 
   @PutMapping(value = "/updateShipData")
-  public ResponseEntity<Boolean> updateShipData(@RequestParam String shipId, @RequestParam ShipData shipData){
-    return shipDataDao.update(shipId, shipData);
+  public ResponseEntity<Boolean> updateShipData(@RequestBody ShipData shipData) {
+    System.out.println("Empfangen: " + shipData.toString());
+
+    return shipDataDao.update(shipData);
+  }
+
+  @GetMapping(value = "/getShipData")
+  public ResponseEntity<ShipData> getShipData(@RequestParam String shipId) {
+    System.out.println("Empfangen: " + shipId.toString());
+
+    return shipDataDao.getShipData(shipId);
   }
 
   /**
-   * @param shipData the ship data will be deleted from database.
+   * @param shipId the ship data will be deleted from database.
    * @return {@code true} if the ship data exists and successfully deleted, otherwise {@code false}
    */
   @DeleteMapping(value = "/deleteShipData") //TODO check, if works correctly
-  public ResponseEntity<Boolean> deleteShipData(@RequestBody ShipData shipData) {
-    System.out.println("Empfangen: " + shipData.toString());
+  public ResponseEntity<Boolean> deleteShipData(@RequestParam String shipId) {
+    System.out.println("Empfangen: " + shipId);
 
-    return shipDataDao.delete(shipData);
+    return shipDataDao.delete(shipId);
   }
 
   /**
