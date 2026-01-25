@@ -1,14 +1,14 @@
 package com.hhs.shipapp.util;
 
-import com.hhs.lib.model.Ground;
-import com.hhs.lib.model.Sector;
-import com.hhs.lib.model.Vec2D;
+import com.hhs.lib.model.*;
+import com.hhs.shipapp.models.Echo;
 import com.hhs.shipapp.models.ShipEntityState;
-import com.hhs.shipapp.models.*;
+import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Course;
 import com.hhs.shipapp.models.enums.Rudder;
 import com.hhs.shipapp.models.messages.Launched;
 import com.hhs.shipapp.models.messages.RadarResponse;
+import com.hhs.shipapp.service.ShipTransportMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,14 +36,15 @@ public class Helper {
     return launched;
   }
 
-  public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition, Vec2D shipDirection) {
+  public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition,
+                                               Vec2D shipDirection) {
     List<Sector> verboteneRichtungen = new ArrayList<>();
     RadarResponse radarResponse = new RadarResponse();
     radarResponse.setEchos(shipMessage.getEchos());
 
     for (Echo echo : shipMessage.getEchos()) {
-      Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - sectorAtShipPosition.getX(),
-          echo.getSector().getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
+      Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - sectorAtShipPosition.getX(), echo.getSector()
+                                                                                                     .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -55,12 +56,27 @@ public class Helper {
     return radarResponse;
   }
 
+  public static void persistSectorData(String shipId, ShipTransportMessage shipTransportMessage,
+                                       List<ShipMessage> shipMessages) {
+    shipMessages.getFirst().getEchos().forEach(echo -> {
+      SectorData sectorData = new SectorData();
+      sectorData.setShipId(shipId);
+      sectorData.setGround(echo.getGround());
+      sectorData.setHeight(echo.getHeight());
+      sectorData.setSectorX(echo.getSector().getVec2()[0]);
+      sectorData.setSectorY(echo.getSector().getVec2()[1]);
+
+      shipTransportMessage.saveSectorData(sectorData);
+    });
+
+  }
+
   private static boolean isSectorNavigable(Echo echo) {
     return echo.getHeight() <= 0 && (echo.getGround() == Ground.Water || echo.getGround() == Ground.Harbour);
   }
 
-  public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId, List<ShipMessage> shipMessages,
-      String course, String rudder) {
+  public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId,
+                                           List<ShipMessage> shipMessages, String course, String rudder) {
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
     Course parsedCourse = Course.fromString(course);
@@ -93,6 +109,26 @@ public class Helper {
     return null;
   }
 
+  public static void updateSectorData(String shipId, ShipTransportMessage shipTransportMessage,
+                                      List<ShipMessage> shipMessages) {
+    ShipData shipData = shipTransportMessage.getShipData(shipId);
+
+    Sector sector = new Sector(new Vec2D(shipData.getSectorX(), shipData.getSectorY()));
+
+    //TODO find sector in DB, than update it, if it exists
+    SectorData sectorData = new SectorData();
+    sectorData.setShipId(shipId);
+    sectorData.setSectorX(sector.getVec2()[0]);
+    sectorData.setSectorY(sector.getVec2()[1]);
+    sectorData.setDepth(shipMessages.getFirst().getDepth());
+    sectorData.setStddev(shipMessages.getFirst().getStddev());
+
+    System.out.println(sectorData);
+    shipTransportMessage.updateSectorData(sectorData);
+  }
+
+  public static void deleteShip(String shipId, ShipTransportMessage shipTransportMessage) {
+     }
 }
 
 

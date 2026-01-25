@@ -1,5 +1,6 @@
 package com.hhs.shipapp.controller;
 
+import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
 import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.models.ShipEntityState;
@@ -10,7 +11,10 @@ import com.hhs.shipapp.service.ShipAppImpl;
 import com.hhs.shipapp.service.ShipTransportMessage;
 import com.hhs.shipapp.util.Helper;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -24,17 +28,15 @@ public class ShipAppController {
   private final ShipTransportMessage shipTransportMessage;
 
   public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
-      Map<String, ShipEntityState> shipEntityStateMap) {
+                           Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
   }
 
   @PostMapping("/launch")
-  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y, @RequestParam int dx,
-      @RequestParam int dy) {
-    //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt, dann ein Schiff
-    // erstellen und anschließend den User entsprechend informieren
+  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
+                                       @RequestParam int dx, @RequestParam int dy) {
 
     Vec2D direction = new Vec2D(dx, dy);
     Vec2D sector = new Vec2D(x, y);
@@ -44,8 +46,6 @@ public class ShipAppController {
       System.out.println("isSectorFree: " + false);
       return ResponseEntity.ok("Error");
     }
-
-    shipTransportMessage.sendMessage();
 
     List<ShipMessage> shipMessages = shipAppImpl.launch(name, sector, direction);
     String shipId = shipMessages.getFirst().getId();
@@ -57,15 +57,12 @@ public class ShipAppController {
       return ResponseEntity.ok("Error");
     }
 
-    ShipData shipDataToSaveInDB = new ShipData();
-    shipDataToSaveInDB.setShipId(shipId);
-    shipDataToSaveInDB.setShipName(name);
-    shipDataToSaveInDB.setSectorX(x);
-    shipDataToSaveInDB.setSectorY(y);
-    shipDataToSaveInDB.setDirectionX(dx);
-    shipDataToSaveInDB.setDirectionY(dy);
+    /* save sector data into DB*/
+    SectorData sectorData = new SectorData(shipId, x, y);
+    shipTransportMessage.saveSectorData(sectorData);
 
-    shipTransportMessage.saveShipData(shipDataToSaveInDB);
+    /* save ship data into DB*/
+    shipTransportMessage.saveShipData(new ShipData(shipId, name, x, y, dx, dy));
 
     return ResponseEntity.ok(shipId);
   }
@@ -76,13 +73,18 @@ public class ShipAppController {
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
-    RadarResponse radarResponse = Helper.getRadarResponse(shipMessages.getFirst(), state.getSector(), state.getDirection());
+    RadarResponse radarResponse = Helper.getRadarResponse(shipMessages.getFirst(), state.getSector(),
+                                                          state.getDirection());
+
+    /* save sector data into DB*/
+    Helper.persistSectorData(shipId, shipTransportMessage, shipMessages);
 
     return ResponseEntity.ok(radarResponse);
   }
 
   @PostMapping("/navigate")
-  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
+  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course,
+                                          @RequestParam String rudder) {
     ShipEntityState state = shipEntityStateMap.get(shipId);
     System.out.println(state);
     if (state == null) {
@@ -90,7 +92,8 @@ public class ShipAppController {
       ResponseEntity.ok(false);
     }
 
-    //TODO check, is any ship at the sector, if sector empty, move it to this sector, otherwise return because crash -> false (ferne Zukunft)
+    //TODO check, is any ship at the sector, if sector empty, move it to this sector, otherwise return because crash
+    // -> false (ferne Zukunft)
 
     List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
 
@@ -107,26 +110,38 @@ public class ShipAppController {
       shipData.setDirectionX(shipMessages.getFirst().getDir().getVec2()[0]);
       shipData.setDirectionY(shipMessages.getFirst().getDir().getVec2()[1]);
 
-      shipTransportMessage.saveShipData(shipData);
+      shipTransportMessage.updateShipData(shipData);
 
       return ResponseEntity.ok(true);
-    } else {
+    }
+    else {
 //      exit(shipId);
 
       return ResponseEntity.ok(false);
     }
   }
 
-  @PostMapping("/exit")
-  public ResponseEntity<String> exit(@RequestParam String shipId) {
-    shipAppImpl.exit();
-    return ResponseEntity.ok("sent exit");
-  }
-
   @PostMapping("/scan")
   public ResponseEntity<List<ShipMessage>> scan(@RequestParam String shipId) {
     List<ShipMessage> shipMessages = shipAppImpl.scan();
+
+    Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
+
     return ResponseEntity.ok(shipMessages);
+  }
+
+  @PostMapping("/exit")
+  public ResponseEntity<String> exit(@RequestParam String shipId) {
+    //
+    // TODO delete shipData from shipData database
+    shipTransportMessage.removeShipData(shipId);
+
+
+
+    // TODO disconnect connection
+
+    shipAppImpl.exit();
+    return ResponseEntity.ok("sent exit");
   }
 
 }
