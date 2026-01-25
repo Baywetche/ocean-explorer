@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface SectorInfoRepository extends JpaRepository<SectorData, Long> {
+public interface SectorDataRepository extends JpaRepository<SectorData, Long> {
 
   List<SectorData> findByShipId(String shipId);
 
