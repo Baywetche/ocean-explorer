@@ -29,14 +29,14 @@ public class ShipBaseServerController {
    */
   @PostMapping(value = "/saveSectorData")
   public ResponseEntity<Boolean> saveSectorData(@RequestBody SectorData sectorData) {
-    System.out.println("Empfangen: " + sectorData.toString());
+//    System.out.println("Empfangen: " + sectorData.toString());
 
     return sectorDataDao.save(sectorData);
   }
 
   @PutMapping(value = "/updateSectorData")
   public ResponseEntity<Boolean> updateSectorData(@RequestBody SectorData sectorData) {
-    System.out.println("Empfangen: " + sectorData.toString());
+//    System.out.println("Empfangen: " + sectorData.toString());
 
     return sectorDataDao.update(sectorData);
   }
@@ -48,7 +48,7 @@ public class ShipBaseServerController {
    */
   @PostMapping(value = "/findSectorData") //TODO check, if works correctly
   public ResponseEntity<Boolean> findSectorData(@RequestBody SectorData sectorData) {
-    System.out.println("Empfangen: " + sectorData.toString());
+//    System.out.println("Empfangen: " + sectorData.toString());
 
     return sectorDataDao.findBySector(sectorData);
   }

@@ -18,15 +18,36 @@ public class SectorDataDao {
   }
 
   public ResponseEntity<Boolean> save(SectorData sectorData) {
-    boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY())
-                                          .isEmpty();
 
-    if (exists) {
-      return ResponseEntity.ok(false);
+    List<SectorData> existingSectors = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
+
+    // Kein Eintrag vorhanden → neu speichern
+    if (existingSectors.isEmpty()) {
+      sectorDataRepository.save(sectorData);
+      return ResponseEntity.ok(true);
     }
 
-    sectorDataRepository.save(sectorData);
-    return ResponseEntity.ok(true);
+    Long existingId = existingSectors.getFirst().getId();
+    Optional<SectorData> existingOptional = sectorDataRepository.findById(existingId);
+
+    if (existingOptional.isEmpty()) {
+      // wenn Datensatz wurde zwischenzeitlich gelöscht
+      sectorDataRepository.save(sectorData);
+      return ResponseEntity.ok(true);
+    }
+
+    SectorData existing = existingOptional.get();
+
+    // Eintrag existiert, aber Ground ist noch nicht gesetzt → ergänzen
+    if (existing.getGround() == null) {
+      existing.setGround(sectorData.getGround());
+      existing.setHeight(sectorData.getHeight());
+
+      sectorDataRepository.save(existing);
+      return ResponseEntity.ok(true);
+    }
+
+    return ResponseEntity.ok(false);     // Eintrag existiert und ist bereits vollständig
   }
 
   public List<SectorData> getAllSectorData() {
@@ -34,8 +55,7 @@ public class SectorDataDao {
   }
 
   public ResponseEntity<Boolean> findBySector(SectorData sectorData) {
-    boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY())
-                                          .isEmpty();
+    boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY()).isEmpty();
 
     if (exists) {
       return ResponseEntity.ok(false);
@@ -43,7 +63,6 @@ public class SectorDataDao {
 
     return ResponseEntity.ok(true);
   }
-
 
   /**
    * return all sector data, that explored by one ship
@@ -68,9 +87,6 @@ public class SectorDataDao {
       }
 
       SectorData existing = sectorDataOptional.get();
-      existing.setSectorX(sectorData.getSectorX());
-      existing.setSectorY(sectorData.getSectorY());
-      existing.setHeight(sectorData.getHeight());
       existing.setDepth(sectorData.getDepth());
       existing.setStddev(sectorData.getStddev());
 
@@ -82,8 +98,7 @@ public class SectorDataDao {
   }
 
   private Long getSectorDataIdByShipId(SectorData sectorData) throws ClassNotFoundException {
-    List<SectorData> sectorDataList = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(),
-                                                                                   sectorData.getSectorY());
+    List<SectorData> sectorDataList = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
     if (sectorDataList.isEmpty()) {
       throw new ClassNotFoundException("sector data not exist");
     }
