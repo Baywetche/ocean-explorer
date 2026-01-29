@@ -85,10 +85,20 @@ public class ShipBaseServerController {
   }
 
   @GetMapping(value = "/getShipData")
-  public ResponseEntity<ShipData> getShipData(@RequestParam String shipId) {
+  public ResponseEntity<ShipData> getShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId.toString());
 
     return shipDataDao.getShipData(shipId);
+  }
+
+  /**
+   * @return {@code true} if sector available (not in use by other ship), otherwise {@code false}
+   */
+  @GetMapping(value = "/findIfSectorInUse")
+  public ResponseEntity<Boolean> isSectorAvailable(@RequestParam("sectorX") int sectorX, @RequestParam("sectorY") int sectorY) {
+    System.out.println("Empfangen: " + "(" + sectorX + "," + sectorY + ")");
+
+    return shipDataDao.istSectorExist(sectorX, sectorY);
   }
 
   /**
@@ -96,20 +106,16 @@ public class ShipBaseServerController {
    * @return {@code true} if the ship data exists and successfully deleted, otherwise {@code false}
    */
   @DeleteMapping(value = "/deleteShipData") //TODO check, if works correctly
-  public ResponseEntity<Boolean> deleteShipData(@RequestParam String shipId) {
+  public ResponseEntity<Boolean> deleteShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId);
 
     return shipDataDao.delete(shipId);
   }
 
-  /**
-   * @return {@code true} if sector available (not in use by other ship), otherwise {@code false}
-   */
-  @GetMapping(value = "/findIfSectorInUse")
-  public ResponseEntity<Boolean> isSectorAvailable(@RequestParam int sectorX, @RequestParam int sectorY) {
-    System.out.println("Empfangen: " + "(" + sectorX + "," + sectorY + ")");
+  @GetMapping(value = "/checkShipIdExists")
+  public ResponseEntity<Boolean> isShipIdExist(@RequestParam("shipId") String shipId){
 
-    return shipDataDao.istSectorExist(sectorX, sectorY);
+    return shipDataDao.existShipId(shipId);
   }
 
 }

@@ -4,6 +4,7 @@ import com.hhs.lib.model.ShipData;
 import com.hhs.shipbaseserver.repository.ShipDataRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -48,6 +49,7 @@ public class ShipDataDao {
     return !shipDataRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
   }
 
+  @Transactional
   public ResponseEntity<Boolean> delete(String shipId) {
     if (shipDataRepository.findByShipId(shipId).isEmpty()) {return ResponseEntity.ok(false);}
 
@@ -73,5 +75,12 @@ public class ShipDataDao {
     }
 
     return ResponseEntity.ok(optionalShipData.get());
+  }
+
+  public ResponseEntity<Boolean> existShipId(String shipId) {
+    if (!shipDataRepository.existsByShipId(shipId)) return ResponseEntity.ok(false);
+
+    System.out.println();
+    return ResponseEntity.ok(true);
   }
 }
