@@ -21,6 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ShipAppImpl implements ShipApp {
 
+  private final ShipClientConnection shipClientConnection;
   private ShipClientConnection clientConnection;
   private ResponseManager responseManager;
 
@@ -98,6 +99,16 @@ public class ShipAppImpl implements ShipApp {
   }
 
   @Override
+  public boolean getConnectionState() {
+    return shipClientConnection.getClientConnectionState();
+  }
+
+  @Override
+  public void connectShipClientToShipServer() {
+    shipClientConnection.connect();
+  }
+
+  @Override
   public List<ShipMessage> scan() {
     List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.scan).build();
@@ -115,8 +126,10 @@ public class ShipAppImpl implements ShipApp {
   }
 
   @Override
-  public void exit() {
+  public boolean exit() {
     ShipMessage msg = ShipMessage.builder().cmd(Commands.exit).build();
     clientConnection.sendMessage2Server(msg);
+
+    return shipClientConnection.closeConnection();
   }
 }

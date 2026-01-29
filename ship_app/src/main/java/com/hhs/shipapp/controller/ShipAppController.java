@@ -7,7 +7,7 @@ import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
 import com.hhs.shipapp.models.messages.RadarResponse;
-import com.hhs.shipapp.service.ShipAppImpl;
+import com.hhs.shipapp.service.ShipApp;
 import com.hhs.shipapp.service.ShipTransportMessage;
 import com.hhs.shipapp.util.Helper;
 import org.springframework.http.ResponseEntity;
@@ -23,31 +23,37 @@ import java.util.Map;
 @RequestMapping("/api/ship")
 public class ShipAppController {
 
-  private final ShipAppImpl shipAppImpl;
+  private final ShipApp shipApp;
   private final Map<String, ShipEntityState> shipEntityStateMap;
   private final ShipTransportMessage shipTransportMessage;
 
-  public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
-                           Map<String, ShipEntityState> shipEntityStateMap) {
-    this.shipAppImpl = shipAppImpl;
+  public ShipAppController(ShipApp shipApp, ShipTransportMessage shipTransportMessage,
+      Map<String, ShipEntityState> shipEntityStateMap) {
+    this.shipApp = shipApp;
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
   }
 
   @PostMapping("/launch")
-  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y,
-                                       @RequestParam int dx, @RequestParam int dy) {
+  public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y, @RequestParam int dx,
+      @RequestParam int dy) {
+
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    if (!isConnectedToShipServer) {
+      shipApp.connectShipClientToShipServer();
+    }
 
     Vec2D direction = new Vec2D(dx, dy);
     Vec2D sector = new Vec2D(x, y);
 
     boolean isSectorFree = shipTransportMessage.isSectorFree(sector);
     if (!isSectorFree) {
-      System.out.println("isSectorFree: " + false);
+      System.out.println("The ship cannot be created because the sector is not free!");
       return ResponseEntity.ok("Error");
     }
 
-    List<ShipMessage> shipMessages = shipAppImpl.launch(name, sector, direction);
+    List<ShipMessage> shipMessages = shipApp.launch(name, sector, direction);
     String shipId = shipMessages.getFirst().getId();
 
     ShipEntityState state = Helper.updateShipEntityStateMap(shipId, name, sector, direction);
@@ -69,12 +75,23 @@ public class ShipAppController {
 
   @PostMapping("/radar")
   public ResponseEntity<RadarResponse> radar(@RequestParam String shipId) {
-    List<ShipMessage> shipMessages = shipAppImpl.radar();
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    if (!isConnectedToShipServer) {
+      return ResponseEntity.ok(new RadarResponse());
+    }
+
+    //check, if shipId exist in DB
+    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
+    if (!shipIdExists) {
+      return ResponseEntity.ok(new RadarResponse());
+    }
+
+    List<ShipMessage> shipMessages = shipApp.radar();
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
-    RadarResponse radarResponse = Helper.getRadarResponse(shipMessages.getFirst(), state.getSector(),
-                                                          state.getDirection());
+    RadarResponse radarResponse = Helper.getRadarResponse(shipMessages.getFirst(), state.getSector(), state.getDirection());
 
     /* save sector data into DB*/
     Helper.persistSectorData(shipId, shipTransportMessage, shipMessages);
@@ -83,23 +100,29 @@ public class ShipAppController {
   }
 
   @PostMapping("/navigate")
-  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course,
-                                          @RequestParam String rudder) {
+  public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    if (!isConnectedToShipServer) {
+      return ResponseEntity.ok(false);
+    }
+
     ShipEntityState state = shipEntityStateMap.get(shipId);
-    System.out.println(state);
     if (state == null) {
       System.out.println("Navigate: state is null");
       ResponseEntity.ok(false);
     }
 
-    //TODO check, is any ship at the sector, if sector empty, move it to this sector, otherwise return because crash
-    // -> false (ferne Zukunft)
+    //check, if shipId exist in DB
+    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
+    if (!shipIdExists) {
+      return ResponseEntity.ok(false);
+    }
 
-    List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
-
+    List<ShipMessage> shipMessages = shipApp.navigate(course, rudder);
     boolean navigateSucceed = shipMessages.getFirst().getCmd() != Commands.crash;
     if (state != null && navigateSucceed) {
-      System.out.println("navigate succeed?: " + navigateSucceed);
+      System.out.println("navigate succeed: " + navigateSucceed);
       Helper.updateShipEntityState(shipEntityStateMap, shipId, shipMessages, course, rudder);
 
       ShipData shipData = new ShipData();
@@ -113,93 +136,55 @@ public class ShipAppController {
       shipTransportMessage.updateShipData(shipData);
 
       return ResponseEntity.ok(true);
-    }
-    else {
-//      exit(shipId);
+    } else {
+      //TODO must be connection closed after crash?
+
+      exit(shipId);
 
       return ResponseEntity.ok(false);
     }
   }
 
   @PostMapping("/scan")
-  public ResponseEntity<List<ShipMessage>> scan(@RequestParam String shipId) {
-    List<ShipMessage> shipMessages = shipAppImpl.scan();
+  public ResponseEntity<Integer> scan(@RequestParam String shipId) {
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    if (!isConnectedToShipServer) {
+      return ResponseEntity.ok(-2_000_000_000);
+    }
+
+    //check, if shipId exist in DB
+    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
+    if (!shipIdExists) {
+      return ResponseEntity.ok(-2_000_000_000);
+    }
+
+    List<ShipMessage> shipMessages = shipApp.scan();
 
     Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
 
-    return ResponseEntity.ok(shipMessages);
+    return ResponseEntity.ok(shipMessages.getFirst().getDepth());
   }
 
   @PostMapping("/exit")
-  public ResponseEntity<String> exit(@RequestParam String shipId) {
-    //
-    // TODO delete shipData from shipData database
+  public ResponseEntity<Boolean> exit(@RequestParam String shipId) {
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    if (!isConnectedToShipServer) {
+      return ResponseEntity.ok(false);
+    }
+
+    //check, if shipId exist in DB
+    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
+    if (!shipIdExists) {
+      return ResponseEntity.ok(false);
+    }
+
+    // delete shipData from shipData database
     shipTransportMessage.removeShipData(shipId);
 
-
-
-    // TODO disconnect connection
-
-    shipAppImpl.exit();
-    return ResponseEntity.ok("sent exit");
+    // send {"cmd": "exit"} to server and close ship Client Connection
+    return ResponseEntity.ok(shipApp.exit());
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- /* @PostMapping("/launch")
-  public ResponseEntity<String> launch(@RequestBody ShipData shipData) {
-    //TODO prüfen, ob das gegebene Sector bereits mit einem Schiff belegt ist. wenn nicht belegt, dann ein Schiff
-    // erstellen und anschließend den User entsprechend informieren
-
-    Vec2D sector = new Vec2D(shipData.getSectorX(), shipData.getSectorY());
-    Vec2D direction = new Vec2D(shipData.getDirectionX(), shipData.getDirectionY());
-
-    boolean isSectorFree = shipTransportMessage.isSectorFree(sector);
-    if (!isSectorFree) {
-      return ResponseEntity.ok("Error");
-    }
-
-    List<ShipMessage> shipMessages = shipAppImpl.launch(shipData.getShipName(), sector, direction);
-    String shipId = shipMessages.getFirst().getId();
-
-    ShipEntityState state = Helper.updateShipEntityStateMap(shipId, shipData.getShipName(), sector, direction);
-    shipEntityStateMap.put(shipId, state);
-
-    if (shipMessages.getFirst().getCmd() != Commands.launched) {
-      return ResponseEntity.ok("Error");
-    }
-
-  *//*  ShipData shipDataToSaveInDB = new ShipData();
-    shipDataToSaveInDB.setShipId(shipId);
-    shipDataToSaveInDB.setShipName(shipData.getShipName());
-    shipDataToSaveInDB.setSectorX(shipData.getSectorX());
-    shipDataToSaveInDB.setSectorY(shipData.getSectorY());
-    shipDataToSaveInDB.setDirectionX(shipData.getDirectionX());
-    shipDataToSaveInDB.setDirectionY(shipData.getDirectionY());
-
-    shipTransportMessage.saveShipData(shipDataToSaveInDB);*//*
-
-    return ResponseEntity.ok(shipId);
-}
-*/
-
-
-
-
-
-
-

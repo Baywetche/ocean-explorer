@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hhs.shipapp.models.ShipMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,18 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class ShipClientConnection implements InitializingBean, DisposableBean {
+public class ShipClientConnection implements InitializingBean {
 
   private final String host;
   private final int port;
   private Socket toServer;
   private PrintWriter out;
   private BufferedReader in;
-
-  private static final Logger log = LoggerFactory.getLogger(ShipClientConnection.class);
-
-  private final ObjectMapper mapper = new ObjectMapper();
   private boolean connected = false;
+  private final ObjectMapper mapper = new ObjectMapper();
+  private static final Logger log = LoggerFactory.getLogger(ShipClientConnection.class);
 
   public ShipClientConnection(@Value("${ocean.server.host:localhost}") String host, @Value("${ocean.server.port:8150}") int port) {
     this.host = host;
@@ -111,17 +108,33 @@ public class ShipClientConnection implements InitializingBean, DisposableBean {
     }
   }
 
-  @Override
-  public void destroy() {
+  public boolean getClientConnectionState(){
+    return connected && toServer != null;
+  }
+
+  public boolean closeConnection() {
     connected = false;
+
     try {
       if (out != null)
         out.close();
+      log.info("""
+          PrintWriter closed successfully!
+          """);
       if (in != null)
         in.close();
+      log.info("""
+          BufferedReader closed successfully!
+          """);
       if (toServer != null)
         toServer.close();
-    } catch (Exception ignored) {
+      log.info("""
+          Connection to Ship-Server closed successfully!
+          """);
+
+      return true;
+    } catch (Exception e) {
+      return false;
     }
   }
 

@@ -8,6 +8,7 @@ import com.hhs.shipapp.models.enums.Course;
 import com.hhs.shipapp.models.enums.Rudder;
 import com.hhs.shipapp.models.messages.Launched;
 import com.hhs.shipapp.models.messages.RadarResponse;
+import com.hhs.shipapp.service.ShipAppImpl;
 import com.hhs.shipapp.service.ShipTransportMessage;
 
 import java.util.ArrayList;
@@ -37,14 +38,14 @@ public class Helper {
   }
 
   public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition,
-                                               Vec2D shipDirection) {
+      Vec2D shipDirection) {
     List<Sector> verboteneRichtungen = new ArrayList<>();
     RadarResponse radarResponse = new RadarResponse();
     radarResponse.setEchos(shipMessage.getEchos());
 
     for (Echo echo : shipMessage.getEchos()) {
       Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - sectorAtShipPosition.getX(), echo.getSector()
-                                                                                                     .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
+          .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -57,7 +58,7 @@ public class Helper {
   }
 
   public static void persistSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-                                       List<ShipMessage> shipMessages) {
+      List<ShipMessage> shipMessages) {
     shipMessages.getFirst().getEchos().forEach(echo -> {
       SectorData sectorData = new SectorData();
       sectorData.setShipId(shipId);
@@ -76,7 +77,7 @@ public class Helper {
   }
 
   public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId,
-                                           List<ShipMessage> shipMessages, String course, String rudder) {
+      List<ShipMessage> shipMessages, String course, String rudder) {
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
     Course parsedCourse = Course.fromString(course);
@@ -110,7 +111,7 @@ public class Helper {
   }
 
   public static void updateSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-                                      List<ShipMessage> shipMessages) {
+      List<ShipMessage> shipMessages) {
     ShipData shipData = shipTransportMessage.getShipData(shipId);
 
     Sector sector = new Sector(new Vec2D(shipData.getSectorX(), shipData.getSectorY()));
@@ -127,8 +128,6 @@ public class Helper {
     shipTransportMessage.updateSectorData(sectorData);
   }
 
-  public static void deleteShip(String shipId, ShipTransportMessage shipTransportMessage) {
-     }
 }
 
 

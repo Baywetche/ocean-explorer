@@ -11,10 +11,13 @@ public interface ShipApp {
 
   List<ShipMessage> navigate(String rudder, String course);
 
-  void exit();
+  boolean exit();
 
   List<ShipMessage> scan();
 
   List<ShipMessage> radar();
 
+  boolean getConnectionState();
+
+  void connectShipClientToShipServer();
 }
