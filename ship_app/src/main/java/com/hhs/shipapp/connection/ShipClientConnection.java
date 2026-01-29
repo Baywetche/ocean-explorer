@@ -38,7 +38,7 @@ public class ShipClientConnection implements InitializingBean {
     connect();
   }
 
-  public boolean connect() {
+  public void connect() {
     try {
       toServer = new Socket(host, port);
       in = new BufferedReader(new InputStreamReader(toServer.getInputStream()));
@@ -46,11 +46,9 @@ public class ShipClientConnection implements InitializingBean {
       log.info("Connected to {}:{}", host, port);
 
       connected = true;
-      return true;
     } catch (IOException e) {
       System.out.println(e.getMessage());
     }
-    return false;
   }
 
   public List<String> receiveMessagesFromServer() {
@@ -91,7 +89,7 @@ public class ShipClientConnection implements InitializingBean {
     return responses;
   }
 
-  public boolean sendMessage2Server(ShipMessage message) {
+  public void sendMessage2Server(ShipMessage message) {
     if (!connected) {
       log.warn("Not connected to server");
       connect();
@@ -100,11 +98,9 @@ public class ShipClientConnection implements InitializingBean {
       String jsonString = mapper.writeValueAsString(message);
       out.println(jsonString);
       log.info("Sent : {}", jsonString);
-      return true;
     } catch (Exception e) {
       log.error("Failed to send message to server", e);
       connected = false;
-      return false;
     }
   }
 
