@@ -27,8 +27,7 @@ public class ShipAppController {
   private final Map<String, ShipEntityState> shipEntityStateMap;
   private final ShipTransportMessage shipTransportMessage;
 
-  public ShipAppController(ShipApp shipApp, ShipTransportMessage shipTransportMessage,
-      Map<String, ShipEntityState> shipEntityStateMap) {
+  public ShipAppController(ShipApp shipApp, ShipTransportMessage shipTransportMessage, Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipApp = shipApp;
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
@@ -37,8 +36,7 @@ public class ShipAppController {
   @PostMapping("/launch")
   public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y, @RequestParam int dx,
       @RequestParam int dy) {
-
-    // Prüft, ob eine aktive Verbindung zum Server besteht
+    // Prüft, ob eine aktive Verbindung zum Server besteht. wenn keine Verbindung vorhanden ist, wird eine neue Verbindung aufgebaut.
     boolean isConnectedToShipServer = shipApp.getConnectionState();
     if (!isConnectedToShipServer) {
       shipApp.connectShipClientToShipServer();
@@ -53,6 +51,7 @@ public class ShipAppController {
       return ResponseEntity.ok("Error");
     }
 
+    // ein Schiff wird hier erstellt
     List<ShipMessage> shipMessages = shipApp.launch(name, sector, direction);
     String shipId = shipMessages.getFirst().getId();
 
@@ -87,6 +86,7 @@ public class ShipAppController {
       return ResponseEntity.ok(new RadarResponse());
     }
 
+    // send radar-cmd to server
     List<ShipMessage> shipMessages = shipApp.radar();
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
@@ -107,6 +107,7 @@ public class ShipAppController {
       return ResponseEntity.ok(false);
     }
 
+    //check, if ship exists in Map
     ShipEntityState state = shipEntityStateMap.get(shipId);
     if (state == null) {
       System.out.println("Navigate: state is null");
@@ -119,6 +120,7 @@ public class ShipAppController {
       return ResponseEntity.ok(false);
     }
 
+    // navigate and update data in DB if navigation succeed
     List<ShipMessage> shipMessages = shipApp.navigate(course, rudder);
     boolean navigateSucceed = shipMessages.getFirst().getCmd() != Commands.crash;
     if (state != null && navigateSucceed) {
@@ -137,8 +139,7 @@ public class ShipAppController {
 
       return ResponseEntity.ok(true);
     } else {
-      //TODO must be connection closed after crash?
-
+      // connection must be closed after crash
       exit(shipId);
 
       return ResponseEntity.ok(false);
@@ -159,8 +160,10 @@ public class ShipAppController {
       return ResponseEntity.ok(-2_000_000_000);
     }
 
+    // send scan-cmd to server
     List<ShipMessage> shipMessages = shipApp.scan();
 
+    // update sector data in DB
     Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
 
     return ResponseEntity.ok(shipMessages.getFirst().getDepth());

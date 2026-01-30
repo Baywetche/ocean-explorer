@@ -2,8 +2,8 @@ package com.hhs.shipbaseserver.controller;
 
 import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
-import com.hhs.shipbaseserver.dao.SectorDataDao;
-import com.hhs.shipbaseserver.dao.ShipDataDao;
+import com.hhs.shipbaseserver.dao.SectorDataService;
+import com.hhs.shipbaseserver.dao.ShipDataService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,12 +13,12 @@ import java.util.List;
 @RequestMapping("/shipBaseServerAPI")
 public class ShipBaseServerController {
 
-  private final SectorDataDao sectorDataDao;
-  private final ShipDataDao shipDataDao;
+  private final SectorDataService sectorDataService;
+  private final ShipDataService shipDataService;
 
-  public ShipBaseServerController(SectorDataDao sectorDataDao, ShipDataDao shipDataDao) {
-    this.sectorDataDao = sectorDataDao;
-    this.shipDataDao = shipDataDao;
+  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService) {
+    this.sectorDataService = sectorDataService;
+    this.shipDataService = shipDataService;
   }
 
   /**
@@ -31,14 +31,14 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> saveSectorData(@RequestBody SectorData sectorData) {
     //    System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorDataDao.save(sectorData);
+    return sectorDataService.save(sectorData);
   }
 
   @PutMapping(value = "/updateSectorData")
   public ResponseEntity<Boolean> updateSectorData(@RequestBody SectorData sectorData) {
     //    System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorDataDao.update(sectorData);
+    return sectorDataService.update(sectorData);
   }
 
   /**
@@ -50,7 +50,7 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> findSectorData(@RequestBody SectorData sectorData) {
     //    System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorDataDao.findBySector(sectorData);
+    return sectorDataService.findBySector(sectorData);
   }
 
   /**
@@ -60,7 +60,7 @@ public class ShipBaseServerController {
    */
   @GetMapping(value = "/allSectorData") //TODO check, if works correctly
   public List<SectorData> findAllSectorData() {
-    return sectorDataDao.getAllSectorData();
+    return sectorDataService.getAllSectorData();
   }
 
   /**
@@ -74,21 +74,21 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> saveShipData(@RequestBody ShipData shipData) {
     System.out.println("Empfangen: " + shipData.toString());
 
-    return shipDataDao.save(shipData);
+    return shipDataService.save(shipData);
   }
 
   @PutMapping(value = "/updateShipData")
   public ResponseEntity<Boolean> updateShipData(@RequestBody ShipData shipData) {
     System.out.println("Empfangen: " + shipData.toString());
 
-    return shipDataDao.update(shipData);
+    return shipDataService.update(shipData);
   }
 
   @GetMapping(value = "/getShipData")
   public ResponseEntity<ShipData> getShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId.toString());
 
-    return shipDataDao.getShipData(shipId);
+    return shipDataService.getShipData(shipId);
   }
 
   /**
@@ -98,7 +98,7 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> isSectorAvailable(@RequestParam("sectorX") int sectorX, @RequestParam("sectorY") int sectorY) {
     System.out.println("Empfangen: " + "(" + sectorX + "," + sectorY + ")");
 
-    return shipDataDao.istSectorExist(sectorX, sectorY);
+    return shipDataService.istSectorExist(sectorX, sectorY);
   }
 
   /**
@@ -109,13 +109,13 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> deleteShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId);
 
-    return shipDataDao.delete(shipId);
+    return shipDataService.delete(shipId);
   }
 
   @GetMapping(value = "/checkShipIdExists")
   public ResponseEntity<Boolean> isShipIdExist(@RequestParam("shipId") String shipId) {
 
-    return shipDataDao.existShipId(shipId);
+    return shipDataService.existShipId(shipId);
   }
 
 }

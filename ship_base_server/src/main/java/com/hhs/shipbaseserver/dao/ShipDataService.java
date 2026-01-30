@@ -9,11 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
-public class ShipDataDao {
+public class ShipDataService {
 
   private final ShipDataRepository shipDataRepository;
 
-  public ShipDataDao(ShipDataRepository shipDataRepository) {
+  public ShipDataService(ShipDataRepository shipDataRepository) {
     this.shipDataRepository = shipDataRepository;
   }
 
@@ -51,13 +51,14 @@ public class ShipDataDao {
 
   @Transactional
   public ResponseEntity<Boolean> delete(String shipId) {
-    if (shipDataRepository.findByShipId(shipId).isEmpty()) {return ResponseEntity.ok(false);}
+    if (shipDataRepository.findByShipId(shipId).isEmpty()) {
+      return ResponseEntity.ok(false);
+    }
 
     shipDataRepository.deleteByShipId(shipId);
 
     return ResponseEntity.ok(true);
   }
-
 
   /**
    * sector liegt in datenbank vor -> sector ist belegt: false
@@ -78,7 +79,8 @@ public class ShipDataDao {
   }
 
   public ResponseEntity<Boolean> existShipId(String shipId) {
-    if (!shipDataRepository.existsByShipId(shipId)) return ResponseEntity.ok(false);
+    if (!shipDataRepository.existsByShipId(shipId))
+      return ResponseEntity.ok(false);
 
     System.out.println();
     return ResponseEntity.ok(true);

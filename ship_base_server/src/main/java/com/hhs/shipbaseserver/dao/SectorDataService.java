@@ -9,14 +9,20 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class SectorDataDao {
+public class SectorDataService {
 
   private SectorDataRepository sectorDataRepository;
 
-  public SectorDataDao(SectorDataRepository sectorDataRepository) {
+  public SectorDataService(SectorDataRepository sectorDataRepository) {
     this.sectorDataRepository = sectorDataRepository;
   }
 
+  /**
+   * Saves the given SectorData in the database if no complete entry exists yet.
+   *
+   * @param sectorData the sector data to be saved
+   * @return {@code true} if the entity was saved or updated, {@code false} if an entry already existed
+   */
   public ResponseEntity<Boolean> save(SectorData sectorData) {
 
     List<SectorData> existingSectors = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
@@ -29,7 +35,6 @@ public class SectorDataDao {
 
     Long existingId = existingSectors.getFirst().getId();
     Optional<SectorData> existingOptional = sectorDataRepository.findById(existingId);
-
     if (existingOptional.isEmpty()) {
       // wenn Datensatz wurde zwischenzeitlich gelöscht
       sectorDataRepository.save(sectorData);
@@ -37,7 +42,6 @@ public class SectorDataDao {
     }
 
     SectorData existing = existingOptional.get();
-
     // Eintrag existiert, aber Ground ist noch nicht gesetzt → ergänzen
     if (existing.getGround() == null) {
       existing.setGround(sectorData.getGround());
@@ -47,13 +51,21 @@ public class SectorDataDao {
       return ResponseEntity.ok(true);
     }
 
-    return ResponseEntity.ok(false);     // Eintrag existiert und ist bereits vollständig
+    // Eintrag existiert und ist bereits vollständig
+    return ResponseEntity.ok(false);
   }
 
+  /**
+   * @return all existing sector data as a list*/
   public List<SectorData> getAllSectorData() {
     return sectorDataRepository.findAll();
   }
 
+  /**
+   * Searches for a certain sector.
+   *
+   * @return {@code true} if sector found, {@code false} if sector not found
+   * */
   public ResponseEntity<Boolean> findBySector(SectorData sectorData) {
     boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY()).isEmpty();
 
@@ -65,18 +77,9 @@ public class SectorDataDao {
   }
 
   /**
-   * return all sector data, that explored by one ship
-   */
-  public List<SectorData> getAllSectorDataByShipId(String shipId) throws ClassNotFoundException {
-    List<SectorData> sectorData = sectorDataRepository.findByShipId(shipId);
-
-    if (sectorData.isEmpty()) {
-      throw new ClassNotFoundException("sector data not exist");
-    }
-
-    return sectorData;
-  }
-
+   * Updates sector data in DB
+   *
+   * @return {@code true} if sector found and updated successfully, {@code false} if sector not found*/
   public ResponseEntity<Boolean> update(SectorData sectorData) {
     try {
       Long id = getSectorDataIdByShipId(sectorData);
@@ -97,6 +100,10 @@ public class SectorDataDao {
     }
   }
 
+  /**
+   * Searches for an id for given sector data.
+   *
+   * @return id, if sector exist, otherwise throws exception*/
   private Long getSectorDataIdByShipId(SectorData sectorData) throws ClassNotFoundException {
     List<SectorData> sectorDataList = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
     if (sectorDataList.isEmpty()) {
