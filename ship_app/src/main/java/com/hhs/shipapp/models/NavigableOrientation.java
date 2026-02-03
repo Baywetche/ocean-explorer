@@ -1,11 +1,6 @@
 package com.hhs.shipapp.models;
 
-import com.hhs.lib.model.*;
-import com.hhs.shipapp.models.messages.RadarResponse;
 import lombok.Data;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 public class NavigableOrientation {

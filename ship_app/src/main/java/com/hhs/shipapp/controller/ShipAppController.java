@@ -1,13 +1,11 @@
 package com.hhs.shipapp.controller;
 
-import com.hhs.lib.model.SectorData;
-import com.hhs.lib.model.ShipData;
-import com.hhs.lib.model.Vec2D;
+import com.hhs.lib.model.*;
 import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
 import com.hhs.shipapp.models.messages.RadarResponse;
-import com.hhs.shipapp.service.ShipApp;
+import com.hhs.shipapp.service.ShipAppImpl;
 import com.hhs.shipapp.service.ShipTransportMessage;
 import com.hhs.shipapp.util.Helper;
 import org.springframework.http.ResponseEntity;
@@ -18,17 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ship")
 public class ShipAppController {
 
-  private final ShipApp shipApp;
+  private final ShipAppImpl shipAppImpl;
   private final Map<String, ShipEntityState> shipEntityStateMap;
   private final ShipTransportMessage shipTransportMessage;
 
-  public ShipAppController(ShipApp shipApp, ShipTransportMessage shipTransportMessage, Map<String, ShipEntityState> shipEntityStateMap) {
-    this.shipApp = shipApp;
+  public ShipAppController(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
+      Map<String, ShipEntityState> shipEntityStateMap) {
+    this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
   }
@@ -37,9 +37,9 @@ public class ShipAppController {
   public ResponseEntity<String> launch(@RequestParam String name, @RequestParam int x, @RequestParam int y, @RequestParam int dx,
       @RequestParam int dy) {
     // Prüft, ob eine aktive Verbindung zum Server besteht. wenn keine Verbindung vorhanden ist, wird eine neue Verbindung aufgebaut.
-    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    boolean isConnectedToShipServer = shipAppImpl.getConnectionState();
     if (!isConnectedToShipServer) {
-      shipApp.connectShipClientToShipServer();
+      shipAppImpl.connectShipClientToShipServer();
     }
 
     Vec2D direction = new Vec2D(dx, dy);
@@ -52,7 +52,7 @@ public class ShipAppController {
     }
 
     // ein Schiff wird hier erstellt
-    List<ShipMessage> shipMessages = shipApp.launch(name, sector, direction);
+    List<ShipMessage> shipMessages = shipAppImpl.launch(name, sector, direction);
     String shipId = shipMessages.getFirst().getId();
 
     ShipEntityState state = Helper.updateShipEntityStateMap(shipId, name, sector, direction);
@@ -75,7 +75,7 @@ public class ShipAppController {
   @PostMapping("/radar")
   public ResponseEntity<RadarResponse> radar(@RequestParam String shipId) {
     // Prüft, ob eine aktive Verbindung zum Server besteht
-    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    boolean isConnectedToShipServer = shipAppImpl.getConnectionState();
     if (!isConnectedToShipServer) {
       return ResponseEntity.ok(new RadarResponse());
     }
@@ -87,7 +87,7 @@ public class ShipAppController {
     }
 
     // send radar-cmd to server
-    List<ShipMessage> shipMessages = shipApp.radar();
+    List<ShipMessage> shipMessages = shipAppImpl.radar();
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
@@ -99,10 +99,33 @@ public class ShipAppController {
     return ResponseEntity.ok(radarResponse);
   }
 
+  @PostMapping("/scan")
+  public ResponseEntity<Integer> scan(@RequestParam String shipId) {
+    // Prüft, ob eine aktive Verbindung zum Server besteht
+    boolean isConnectedToShipServer = shipAppImpl.getConnectionState();
+    if (!isConnectedToShipServer) {
+      return ResponseEntity.ok(-2_000_000_000);
+    }
+
+    //check, if shipId exist in DB
+    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
+    if (!shipIdExists) {
+      return ResponseEntity.ok(-2_000_000_000);
+    }
+
+    // send scan-cmd to server
+    List<ShipMessage> shipMessages = shipAppImpl.scan();
+
+    // update sector data in DB
+    Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
+
+    return ResponseEntity.ok(shipMessages.getFirst().getDepth());
+  }
+
   @PostMapping("/navigate")
   public ResponseEntity<Boolean> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
     // Prüft, ob eine aktive Verbindung zum Server besteht
-    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    boolean isConnectedToShipServer = shipAppImpl.getConnectionState();
     if (!isConnectedToShipServer) {
       return ResponseEntity.ok(false);
     }
@@ -121,19 +144,25 @@ public class ShipAppController {
     }
 
     // navigate and update data in DB if navigation succeed
-    List<ShipMessage> shipMessages = shipApp.navigate(course, rudder);
+    List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
     boolean navigateSucceed = shipMessages.getFirst().getCmd() != Commands.crash;
     if (state != null && navigateSucceed) {
       System.out.println("navigate succeed: " + navigateSucceed);
+
+      // update shipEntityStateMap
       Helper.updateShipEntityState(shipEntityStateMap, shipId, shipMessages, course, rudder);
+
+      // update shipData
+      Vec2D sector = new Vec2D(shipMessages.getFirst().getSector().getVec2()[0], shipMessages.getFirst().getSector().getVec2()[1]);
+      Vec2D direction = new Vec2D(shipMessages.getFirst().getDir().getVec2()[0], shipMessages.getFirst().getDir().getVec2()[1]);
 
       ShipData shipData = new ShipData();
       shipData.setShipId(shipId);
       shipData.setShipName(Helper.extractShipNameFromShipId(shipId));
-      shipData.setSectorX(shipMessages.getFirst().getSector().getVec2()[0]);
-      shipData.setSectorY(shipMessages.getFirst().getSector().getVec2()[1]);
-      shipData.setDirectionX(shipMessages.getFirst().getDir().getVec2()[0]);
-      shipData.setDirectionY(shipMessages.getFirst().getDir().getVec2()[1]);
+      shipData.setSectorX(sector.getX());
+      shipData.setSectorY(sector.getY());
+      shipData.setDirectionX(direction.getX());
+      shipData.setDirectionY(direction.getY());
 
       shipTransportMessage.updateShipData(shipData);
 
@@ -146,33 +175,46 @@ public class ShipAppController {
     }
   }
 
-  @PostMapping("/scan")
-  public ResponseEntity<Integer> scan(@RequestParam String shipId) {
-    // Prüft, ob eine aktive Verbindung zum Server besteht
-    boolean isConnectedToShipServer = shipApp.getConnectionState();
-    if (!isConnectedToShipServer) {
-      return ResponseEntity.ok(-2_000_000_000);
+  @PostMapping("/autoPilot")
+  public ResponseEntity<AutoPilotData> autoPilot(@RequestParam String shipId) {
+    ResponseEntity<RadarResponse> radarResponse = radar(shipId);
+    List<Sector> notNavigable = radarResponse.getBody().getNotNavigable();
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipEntityStateMap.get(shipId).getDirection());
+
+    Sector ostRichtung  = new Sector(relativeCoordinateSystem.getCoordinates().get(2));
+    Sector westRichtung = new Sector(relativeCoordinateSystem.getCoordinates().get(6));
+
+    if (!notNavigable.contains(ostRichtung)) {
+      notNavigable.add(ostRichtung); // Hinzufügung von Ost-Richtung zu der nicht navigierbaren Liste
     }
 
-    //check, if shipId exist in DB
-    boolean shipIdExists = shipTransportMessage.isShipIdExists(shipId);
-    if (!shipIdExists) {
-      return ResponseEntity.ok(-2_000_000_000);
+    if (!notNavigable.contains(westRichtung)) {
+      notNavigable.add(westRichtung); // Hinzufügung von West-Richtung zu der nicht navigierbaren Liste
     }
 
-    // send scan-cmd to server
-    List<ShipMessage> shipMessages = shipApp.scan();
+    System.out.println(notNavigable);
 
-    // update sector data in DB
-    Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
+    ResponseEntity<Integer> scanResponse = scan(shipId);
 
-    return ResponseEntity.ok(shipMessages.getFirst().getDepth());
+
+
+
+
+
+
+
+ /*
+    ResponseEntity<Boolean> navigateResponse = navigate(shipId, "Forward", "Center");
+
+    ShipEntityState state = shipEntityStateMap.get(shipId);*/
+
+    return ResponseEntity.ok(new AutoPilotData());
   }
 
   @PostMapping("/exit")
   public ResponseEntity<Boolean> exit(@RequestParam String shipId) {
     // Prüft, ob eine aktive Verbindung zum Server besteht
-    boolean isConnectedToShipServer = shipApp.getConnectionState();
+    boolean isConnectedToShipServer = shipAppImpl.getConnectionState();
     if (!isConnectedToShipServer) {
       return ResponseEntity.ok(false);
     }
@@ -187,7 +229,14 @@ public class ShipAppController {
     shipTransportMessage.removeShipData(shipId);
 
     // send {"cmd": "exit"} to server and close ship Client Connection
-    return ResponseEntity.ok(shipApp.exit());
+    return ResponseEntity.ok(shipAppImpl.exit());
   }
-
 }
+
+
+
+
+
+
+
+
