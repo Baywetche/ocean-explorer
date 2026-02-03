@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ship")
@@ -181,15 +180,15 @@ public class ShipAppController {
     List<Sector> notNavigable = radarResponse.getBody().getNotNavigable();
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipEntityStateMap.get(shipId).getDirection());
 
-    Sector ostRichtung  = new Sector(relativeCoordinateSystem.getCoordinates().get(2));
-    Sector westRichtung = new Sector(relativeCoordinateSystem.getCoordinates().get(6));
+    Sector directionToEast = new Sector(relativeCoordinateSystem.getCoordinates().get(2));
+    Sector directionToWest = new Sector(relativeCoordinateSystem.getCoordinates().get(6));
 
-    if (!notNavigable.contains(ostRichtung)) {
-      notNavigable.add(ostRichtung); // Hinzufügung von Ost-Richtung zu der nicht navigierbaren Liste
+    if (!notNavigable.contains(directionToEast)) {
+      notNavigable.add(directionToEast); // Hinzufügung von Ost-Richtung zu der nicht navigierbaren Liste
     }
 
-    if (!notNavigable.contains(westRichtung)) {
-      notNavigable.add(westRichtung); // Hinzufügung von West-Richtung zu der nicht navigierbaren Liste
+    if (!notNavigable.contains(directionToWest)) {
+      notNavigable.add(directionToWest); // Hinzufügung von West-Richtung zu der nicht navigierbaren Liste
     }
 
     System.out.println(notNavigable);
