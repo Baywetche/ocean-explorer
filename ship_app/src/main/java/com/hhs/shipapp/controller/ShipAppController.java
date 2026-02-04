@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/ship")
@@ -195,7 +196,8 @@ public class ShipAppController {
 
     ResponseEntity<Integer> scanResponse = scan(shipId);
 
-
+    List<Vec2D> listToClear = Helper.calcAllowedSurroundingFields(shipEntityStateMap.get(shipId), notNavigable);
+    Optional<Vec2D> bls = Helper.getShipBlockingSector(shipEntityStateMap.get(shipId), radarResponse);
 
 
 
@@ -206,6 +208,7 @@ public class ShipAppController {
     ResponseEntity<Boolean> navigateResponse = navigate(shipId, "Forward", "Center");
 
     ShipEntityState state = shipEntityStateMap.get(shipId);*/
+//    shipTransportMessage.saveRoutePlan(new RoutePlan());
 
     return ResponseEntity.ok(new AutoPilotData());
   }

@@ -1,5 +1,6 @@
 package com.hhs.shipapp.service;
 
+import com.hhs.lib.model.RoutePlan;
 import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
 import com.hhs.lib.model.Vec2D;
@@ -79,9 +80,9 @@ public class ShipTransportMessage {
 
   public ShipData getShipData(String shipId) {
     ShipData response = restClient.get().uri(
-        uriBuilder -> uriBuilder.path("/getShipData")
-            .queryParam("shipId", shipId)
-            .build())
+            uriBuilder -> uriBuilder.path("/getShipData")
+                .queryParam("shipId", shipId)
+                .build())
         .retrieve().body(ShipData.class);
 
     System.out.println("Antwort vom ShipBaseServer: " + "searching for shipData successful: " + response.toString());
@@ -91,9 +92,9 @@ public class ShipTransportMessage {
 
   public boolean removeShipData(String shipId) {
     Boolean response = restClient.delete().uri(
-        uriBuilder -> uriBuilder.path("/deleteShipData")
-            .queryParam("shipId", shipId)
-            .build())
+            uriBuilder -> uriBuilder.path("/deleteShipData")
+                .queryParam("shipId", shipId)
+                .build())
         .retrieve().body(Boolean.class);
 
     System.out.println("Antwort vom ShipBaseServer: delete shipData by shipId: " + shipId + " successful: " + response);
@@ -102,14 +103,33 @@ public class ShipTransportMessage {
 
   public boolean isShipIdExists(String shipId) {
     Boolean response = restClient.get().uri(
-        uriBuilder -> uriBuilder.path("/checkShipIdExists")
-            .queryParam("shipId", shipId)
-            .build())
+            uriBuilder -> uriBuilder.path("/checkShipIdExists")
+                .queryParam("shipId", shipId)
+                .build())
         .retrieve().body(Boolean.class);
 
     System.out.println("Antwort vom ShipBaseServer: delete shipData by shipId: " + shipId + " successful: " + response);
     return Boolean.TRUE.equals(response);
   }
 
+  public boolean saveRoutePlan(RoutePlan routePlan) {
+    boolean response = Boolean.TRUE.equals(restClient.post()
+        .uri("/saveRoutePlan")
+        .body(routePlan).retrieve().body(boolean.class));
+
+    System.out.println("Antwort vom ShipBaseServer: " + "saving  RoutePlan successful: " + response);
+
+    return response;
+  }
+
+  public boolean removeRoutePlan() {
+    Boolean response = restClient.delete().uri(
+            uriBuilder -> uriBuilder.path("/deleteAllRoutePlan")
+                .build())
+        .retrieve().body(Boolean.class);
+
+    System.out.println("Antwort vom ShipBaseServer: delete all route plan successful: " + response);
+    return Boolean.TRUE.equals(response);
+  }
 
 }

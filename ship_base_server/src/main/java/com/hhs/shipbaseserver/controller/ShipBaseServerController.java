@@ -1,7 +1,9 @@
 package com.hhs.shipbaseserver.controller;
 
+import com.hhs.lib.model.RoutePlan;
 import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
+import com.hhs.shipbaseserver.dao.RoutePlanService;
 import com.hhs.shipbaseserver.dao.SectorDataService;
 import com.hhs.shipbaseserver.dao.ShipDataService;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +17,12 @@ public class ShipBaseServerController {
 
   private final SectorDataService sectorDataService;
   private final ShipDataService shipDataService;
+  private final RoutePlanService routePlanService;
 
-  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService) {
+  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService, RoutePlanService routePlanService) {
     this.sectorDataService = sectorDataService;
     this.shipDataService = shipDataService;
+    this.routePlanService = routePlanService;
   }
 
   /**
@@ -116,6 +120,20 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> isShipIdExist(@RequestParam("shipId") String shipId) {
 
     return shipDataService.existShipId(shipId);
+  }
+
+  @PostMapping(value = "/saveRoutePlan")
+  public ResponseEntity<Boolean> saveRoutePlan(@RequestBody RoutePlan routePlan) {
+    System.out.println("Empfangen: " + routePlan.toString());
+
+    return routePlanService.save(routePlan);
+  }
+
+  @PostMapping(value = "/deleteAllRoutePlan")
+  public ResponseEntity<Boolean> deleteAllRoutePlan() {
+    System.out.println("The deletion of all route plans has been requested.");
+
+    return routePlanService.deleteAllRoutePlan();
   }
 
 }

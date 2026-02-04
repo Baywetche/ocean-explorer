@@ -10,11 +10,9 @@ import com.hhs.shipapp.models.enums.Rudder;
 import com.hhs.shipapp.models.messages.Launched;
 import com.hhs.shipapp.models.messages.RadarResponse;
 import com.hhs.shipapp.service.ShipTransportMessage;
+import org.springframework.http.ResponseEntity;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -40,15 +38,15 @@ public class Helper {
   }
 
   public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition,
-                                               Vec2D shipDirection) {
+      Vec2D shipDirection) {
     List<Sector> verboteneRichtungen = new ArrayList<>();
     RadarResponse radarResponse = new RadarResponse();
     radarResponse.setEchos(shipMessage.getEchos());
 
     for (Echo echo : shipMessage.getEchos()) {
       Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - sectorAtShipPosition.getX(),
-                                    echo.getSector()
-                                        .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
+          echo.getSector()
+              .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -65,7 +63,7 @@ public class Helper {
   }
 
   public static void persistSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-                                       List<ShipMessage> shipMessages) {
+      List<ShipMessage> shipMessages) {
     shipMessages.getFirst().getEchos().forEach(echo -> {
       SectorData sectorData = new SectorData();
       sectorData.setShipId(shipId);
@@ -80,8 +78,8 @@ public class Helper {
   }
 
   public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId,
-                                           List<ShipMessage> shipMessages,
-                                           String course, String rudder) {
+      List<ShipMessage> shipMessages,
+      String course, String rudder) {
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
 
@@ -119,7 +117,7 @@ public class Helper {
   }
 
   public static void updateSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-                                      List<ShipMessage> shipMessages) {
+      List<ShipMessage> shipMessages) {
     ShipData shipData = shipTransportMessage.getShipData(shipId);
 
     Sector sector = new Sector(new Vec2D(shipData.getSectorX(), shipData.getSectorY()));
@@ -136,7 +134,7 @@ public class Helper {
     shipTransportMessage.updateSectorData(sectorData);
   }
 
-  public Vec2D calculateTargetDirection(ShipEntityState shipEntityStateMap, Vec2D goalSector) {
+  public static Vec2D calculateTargetDirection(ShipEntityState shipEntityStateMap, Vec2D goalSector) {
     Vec2D sector = shipEntityStateMap.getSector();
 
     int targetXSign = Integer.signum(goalSector.getX() - sector.getX());
@@ -145,9 +143,9 @@ public class Helper {
     return new Vec2D(targetXSign, targetYSign);
   }
 
-  public ShipMessage getShipMessageFromGivenShipOrientationAndTargetDirection(Vec2D currentOrientation,
-                                                                              Vec2D targetDirection,
-                                                                              List<Sector> notNavigable) {
+  public static ShipMessage getShipMessageFromGivenShipOrientationAndTargetDirection(Vec2D currentOrientation,
+      Vec2D targetDirection,
+      List<Sector> notNavigable) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(currentOrientation);
 
     List<Vec2D> allowedDirections = new ArrayList<>(relativeCoordinateSystem.getCoordinates());
@@ -164,26 +162,87 @@ public class Helper {
     int index = allowedDirections.indexOf(targetDirection);
 
     return switch (index) {
-      case 0 ->
-          ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Center).build(); // north
-      case 1 ->
-          ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Right).build(); // northEsat
-//      case 2 -> east -> this is not allowed
-      case 3 ->
-          ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Left).build(); // southEast
-      case 4 ->
-          ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Center).build(); // south
+      case 0 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Center).build(); // north
+      case 1 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Right).build(); // northEsat
+      //      case 2 -> east -> this is not allowed
+      case 3 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Left).build(); // southEast
+      case 4 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Center).build(); // south
       case 5 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Right)
-                           .build(); // southWest
-//      case 6 -> west -> this is not allowed
-      case 7 ->
-          ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Left).build(); // northWest
+          .build(); // southWest
+      //      case 6 -> west -> this is not allowed
+      case 7 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Left).build(); // northWest
 
       default -> throw new IllegalStateException("Unexpected orientation: " + index);
     };
   }
+
+  public static Optional<Vec2D> getShipBlockingSector(ShipEntityState shipEntityStateMap, ResponseEntity<RadarResponse> radarResponse) {
+    Vec2D direction = shipEntityStateMap.getDirection();
+    Vec2D shipSector = shipEntityStateMap.getSector();
+
+    List<Sector> blockedSectors = radarResponse.getBody().getEchos().stream()
+        .filter(echo ->
+            echo.getGround() != Ground.Harbour &&
+                echo.getGround() != Ground.Water
+        )
+        .map(echo -> echo.getSector())
+        .toList();   // ab Java 16
+
+    Vec2D nextPossiblyShipSector = new Vec2D(shipSector.getX() + direction.getX(), shipSector.getY() + direction.getY());
+
+    Optional<Vec2D> shipBlockingSector = blockedSectors.stream().filter(sector ->
+        sector.getVec2()[0] == nextPossiblyShipSector.getX() &&
+        sector.getVec2()[1] == nextPossiblyShipSector.getY())
+        .map(sector -> new Vec2D(sector.getVec2()[0], sector.getVec2()[1]))
+        .findFirst();
+
+    System.out.println("shipBlockingSector: " + shipBlockingSector);
+    return shipBlockingSector;
+  }
+
+  public static List<Vec2D> calcAllowedSurroundingFields(ShipEntityState shipEntityStateMap, List<Sector> notNavigable) {
+    List<Vec2D> navigableDirections = getNavigableDirections(notNavigable);
+
+    Vec2D shipSector = shipEntityStateMap.getSector();
+
+    List<Vec2D> surroundingFields = new ArrayList<>();
+
+    for (Vec2D vec2D : navigableDirections) {
+      surroundingFields.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
+    }
+
+    System.out.println(surroundingFields);
+
+    return surroundingFields;
+  }
+
+  private static List<Vec2D> getNavigableDirections(List<Sector> sectors) {
+    // alle blockierten Richtungen sammeln
+    Set<Vec2D> blocked = new HashSet<>();
+
+    for (Sector sector : sectors) {
+      blocked.add(new Vec2D(
+          sector.getVec2()[0],
+          sector.getVec2()[1]
+      ));
+    }
+
+    List<Vec2D> navigableDir = new ArrayList<>();
+
+    for (Vec2D dir : new Orientations().getOrientationsList()) {
+      if (!blocked.contains(dir)) {
+        navigableDir.add(dir);
+      }
+    }
+
+    return navigableDir;
+  }
+
+
+
+
 }
 
 
-// { "cmd":"navigate", "rudder":"Left|Center|Right", "course":"Forward|Backward"}
+
 
