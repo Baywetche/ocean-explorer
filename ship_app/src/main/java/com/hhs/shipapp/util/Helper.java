@@ -37,16 +37,14 @@ public class Helper {
     return launched;
   }
 
-  public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition,
-      Vec2D shipDirection) {
+  public static RadarResponse getRadarResponse(ShipMessage shipMessage, Vec2D sectorAtShipPosition, Vec2D shipDirection) {
     List<Sector> verboteneRichtungen = new ArrayList<>();
     RadarResponse radarResponse = new RadarResponse();
     radarResponse.setEchos(shipMessage.getEchos());
 
     for (Echo echo : shipMessage.getEchos()) {
       Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - sectorAtShipPosition.getX(),
-          echo.getSector()
-              .getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
+          echo.getSector().getVec2()[1] - sectorAtShipPosition.getY()); // orientation z.B.: [0,-1]
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -62,8 +60,7 @@ public class Helper {
     return echo.getHeight() <= 0 && (echo.getGround() == Ground.Water || echo.getGround() == Ground.Harbour);
   }
 
-  public static void persistSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-      List<ShipMessage> shipMessages) {
+  public static void persistSectorData(String shipId, ShipTransportMessage shipTransportMessage, List<ShipMessage> shipMessages) {
     shipMessages.getFirst().getEchos().forEach(echo -> {
       SectorData sectorData = new SectorData();
       sectorData.setShipId(shipId);
@@ -77,8 +74,7 @@ public class Helper {
 
   }
 
-  public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId,
-      List<ShipMessage> shipMessages,
+  public static void updateShipEntityState(Map<String, ShipEntityState> shipEntityStateMap, String shipId, List<ShipMessage> shipMessages,
       String course, String rudder) {
 
     ShipEntityState state = shipEntityStateMap.get(shipId);
@@ -116,8 +112,7 @@ public class Helper {
     return null;
   }
 
-  public static void updateSectorData(String shipId, ShipTransportMessage shipTransportMessage,
-      List<ShipMessage> shipMessages) {
+  public static void updateSectorData(String shipId, ShipTransportMessage shipTransportMessage, List<ShipMessage> shipMessages) {
     ShipData shipData = shipTransportMessage.getShipData(shipId);
 
     Sector sector = new Sector(new Vec2D(shipData.getSectorX(), shipData.getSectorY()));
@@ -143,18 +138,14 @@ public class Helper {
     return new Vec2D(targetXSign, targetYSign);
   }
 
-  public static ShipMessage getShipMessageFromGivenShipOrientationAndTargetDirection(Vec2D currentOrientation,
-      Vec2D targetDirection,
+  public static ShipMessage getShipMessageFromGivenShipOrientationAndTargetDirection(Vec2D currentOrientation, Vec2D targetDirection,
       List<Sector> notNavigable) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(currentOrientation);
 
     List<Vec2D> allowedDirections = new ArrayList<>(relativeCoordinateSystem.getCoordinates());
 
     // build a Vec2D-Set of not allowed directions
-    Set<Vec2D> forbiddenDirections = notNavigable
-        .stream()
-        .map(s -> new Vec2D(s.getVec2()[0], s.getVec2()[1]))
-        .collect(Collectors.toSet());
+    Set<Vec2D> forbiddenDirections = notNavigable.stream().map(s -> new Vec2D(s.getVec2()[0], s.getVec2()[1])).collect(Collectors.toSet());
 
     // Entferne alle verbotenen Richtungen aus der Liste, sodass nur die gültigen/möglichen übrig bleiben
     allowedDirections.removeAll(forbiddenDirections);
@@ -167,8 +158,7 @@ public class Helper {
       //      case 2 -> east -> this is not allowed
       case 3 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Left).build(); // southEast
       case 4 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Center).build(); // south
-      case 5 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Right)
-          .build(); // southWest
+      case 5 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Backward).rudder(Rudder.Right).build(); // southWest
       //      case 6 -> west -> this is not allowed
       case 7 -> ShipMessage.builder().cmd(Commands.navigate).course(Course.Forward).rudder(Rudder.Left).build(); // northWest
 
@@ -180,56 +170,61 @@ public class Helper {
     Vec2D direction = shipEntityStateMap.getDirection();
     Vec2D shipSector = shipEntityStateMap.getSector();
 
-    List<Sector> blockedSectors = radarResponse.getBody().getEchos().stream()
-        .filter(echo ->
-            echo.getGround() != Ground.Harbour &&
-                echo.getGround() != Ground.Water
-        )
-        .map(echo -> echo.getSector())
-        .toList();   // ab Java 16
+    List<Sector> blockedSectors =
+        radarResponse.getBody().getEchos().stream().filter(echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water)
+            .map(echo -> echo.getSector()).toList();
 
     Vec2D nextPossiblyShipSector = new Vec2D(shipSector.getX() + direction.getX(), shipSector.getY() + direction.getY());
 
-    Optional<Vec2D> shipBlockingSector = blockedSectors.stream().filter(sector ->
-        sector.getVec2()[0] == nextPossiblyShipSector.getX() &&
-        sector.getVec2()[1] == nextPossiblyShipSector.getY())
-        .map(sector -> new Vec2D(sector.getVec2()[0], sector.getVec2()[1]))
-        .findFirst();
+    Optional<Vec2D> shipBlockingSector = blockedSectors.stream()
+        .filter(sector -> sector.getVec2()[0] == nextPossiblyShipSector.getX() && sector.getVec2()[1] == nextPossiblyShipSector.getY())
+        .map(sector -> new Vec2D(sector.getVec2()[0], sector.getVec2()[1])).findFirst();
 
     System.out.println("shipBlockingSector: " + shipBlockingSector);
     return shipBlockingSector;
   }
 
+  public static Vec2D calcNewGoalShipSectorAfterBlocking(ShipEntityState shipEntityStateMap) {
+    Vec2D shipSector = shipEntityStateMap.getSector();
+    Vec2D direction = shipEntityStateMap.getDirection();
+
+    Vec2D nextAllowedShipSector =
+        new Vec2D(shipSector.getX() + direction.getX() + direction.getX(), shipSector.getY() + direction.getY() + direction.getY());
+
+    System.out.println("nextAllowedShipSector: " + nextAllowedShipSector);
+    return nextAllowedShipSector;
+  }
+
   public static List<Vec2D> calcAllowedSurroundingFields(ShipEntityState shipEntityStateMap, List<Sector> notNavigable) {
-    List<Vec2D> navigableDirections = getNavigableDirections(notNavigable);
+    Vec2D direction = shipEntityStateMap.getDirection();
+    List<Vec2D> navigableDirections = getNavigableDirections(direction, notNavigable);
 
     Vec2D shipSector = shipEntityStateMap.getSector();
 
-    List<Vec2D> surroundingFields = new ArrayList<>();
+    List<Vec2D> allowedSurroundingFields = new ArrayList<>();
 
     for (Vec2D vec2D : navigableDirections) {
-      surroundingFields.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
+      allowedSurroundingFields.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
     }
 
-    System.out.println(surroundingFields);
+    System.out.println("allowedSurroundingFields: " + allowedSurroundingFields);
 
-    return surroundingFields;
+    return allowedSurroundingFields;
   }
 
-  private static List<Vec2D> getNavigableDirections(List<Sector> sectors) {
+  private static List<Vec2D> getNavigableDirections(Vec2D direction, List<Sector> sectors) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(direction);
+
     // alle blockierten Richtungen sammeln
     Set<Vec2D> blocked = new HashSet<>();
 
     for (Sector sector : sectors) {
-      blocked.add(new Vec2D(
-          sector.getVec2()[0],
-          sector.getVec2()[1]
-      ));
+      blocked.add(new Vec2D(sector.getVec2()[0], sector.getVec2()[1]));
     }
 
     List<Vec2D> navigableDir = new ArrayList<>();
 
-    for (Vec2D dir : new Orientations().getOrientationsList()) {
+    for (Vec2D dir : relativeCoordinateSystem.getCoordinates()) {
       if (!blocked.contains(dir)) {
         navigableDir.add(dir);
       }
@@ -238,10 +233,53 @@ public class Helper {
     return navigableDir;
   }
 
+  public static RoutePlan createRoutePlan(ShipEntityState shipEntityStateMap, Vec2D surroundSector, Vec2D newGoalShipSectorAfterBlocking) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipEntityStateMap.getDirection());
+    Vec2D east = relativeCoordinateSystem.getCoordinates().get(2);
+    Vec2D west = relativeCoordinateSystem.getCoordinates().get(6);
 
+    RoutePlan routePlan = new RoutePlan();
+    routePlan.addStep(0, 0);
 
+    List<Vec2D> level1 = new ArrayList<>();
 
+    for (Vec2D vec2D : relativeCoordinateSystem.getCoordinates()) {
+      if (vec2D.equals(east) || vec2D.equals(west)) {
+        continue;
+      }
+
+      Vec2D sector = new Vec2D(surroundSector.getX() + vec2D.getX(), surroundSector.getY() + vec2D.getY());
+      if (surroundSector.equals(sector)){
+        continue;
+      }
+      level1.add(vec2D);
+
+    }
+
+    return routePlan;
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -122,7 +122,7 @@ public class ShipTransportMessage {
     return response;
   }
 
-  public boolean removeRoutePlan() {
+  public boolean clearRoutePlan() {
     Boolean response = restClient.delete().uri(
             uriBuilder -> uriBuilder.path("/deleteAllRoutePlan")
                 .build())

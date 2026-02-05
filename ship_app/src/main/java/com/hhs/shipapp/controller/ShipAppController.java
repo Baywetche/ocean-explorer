@@ -193,22 +193,25 @@ public class ShipAppController {
     }
 
     System.out.println(notNavigable);
-
     ResponseEntity<Integer> scanResponse = scan(shipId);
 
-    List<Vec2D> listToClear = Helper.calcAllowedSurroundingFields(shipEntityStateMap.get(shipId), notNavigable);
-    Optional<Vec2D> bls = Helper.getShipBlockingSector(shipEntityStateMap.get(shipId), radarResponse);
 
 
+    Optional<Vec2D> shipBlockingSector = Helper.getShipBlockingSector(shipEntityStateMap.get(shipId), radarResponse);
+    Vec2D newGoalShipSectorAfterBlocking = Helper.calcNewGoalShipSectorAfterBlocking(shipEntityStateMap.get(shipId));
+    List<Vec2D> allowedSurroundingFields = Helper.calcAllowedSurroundingFields(shipEntityStateMap.get(shipId), notNavigable);
 
+    for (Vec2D surroundSector : allowedSurroundingFields){
+      RoutePlan routePlan = Helper.createRoutePlan(shipEntityStateMap.get(shipId), surroundSector, newGoalShipSectorAfterBlocking);
 
+    }
 
+//    shipTransportMessage.saveRoutePlan(routePlan);
 
  /*
     ResponseEntity<Boolean> navigateResponse = navigate(shipId, "Forward", "Center");
 
     ShipEntityState state = shipEntityStateMap.get(shipId);*/
-//    shipTransportMessage.saveRoutePlan(new RoutePlan());
 
     return ResponseEntity.ok(new AutoPilotData());
   }

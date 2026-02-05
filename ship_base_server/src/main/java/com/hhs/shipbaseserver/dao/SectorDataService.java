@@ -66,14 +66,15 @@ public class SectorDataService {
    *
    * @return {@code true} if sector found, {@code false} if sector not found
    * */
-  public ResponseEntity<Boolean> findBySector(SectorData sectorData) {
-    boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY()).isEmpty();
+  public ResponseEntity<SectorData> findBySector(int sectorX, int sectorY) {
+    boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
 
+    SectorData sectorData = sectorDataRepository.findBySectorXAndSectorY(sectorX, sectorY).getFirst();
     if (exists) {
-      return ResponseEntity.ok(false);
+      return ResponseEntity.ok(sectorData);
     }
 
-    return ResponseEntity.ok(true);
+    return ResponseEntity.ok(new SectorData());
   }
 
   /**

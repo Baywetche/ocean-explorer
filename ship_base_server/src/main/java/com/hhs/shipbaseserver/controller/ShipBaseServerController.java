@@ -51,10 +51,10 @@ public class ShipBaseServerController {
    * @return {@code true} if the sector exists, otherwise {@code false}
    */
   @PostMapping(value = "/findSectorData") //TODO check, if works correctly
-  public ResponseEntity<Boolean> findSectorData(@RequestBody SectorData sectorData) {
-    //    System.out.println("Empfangen: " + sectorData.toString());
+  public ResponseEntity<SectorData> findSectorData(@RequestParam int sectorX, @RequestParam int sectorY) {
+    System.out.println("findSectorData for: (" + sectorX + ", " + sectorY + ")");
 
-    return sectorDataService.findBySector(sectorData);
+    return sectorDataService.findBySector(sectorX, sectorY);
   }
 
   /**
