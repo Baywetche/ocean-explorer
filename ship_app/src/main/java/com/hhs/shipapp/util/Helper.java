@@ -166,12 +166,12 @@ public class Helper {
     };
   }
 
-  public static Optional<Vec2D> getShipBlockingSector(ShipEntityState shipEntityStateMap, ResponseEntity<RadarResponse> radarResponse) {
+  public static Optional<Vec2D> getShipBlockingSector(ShipEntityState shipEntityStateMap, RadarResponse radarResponse) {
     Vec2D direction = shipEntityStateMap.getDirection();
     Vec2D shipSector = shipEntityStateMap.getSector();
 
     List<Sector> blockedSectors =
-        radarResponse.getBody().getEchos().stream().filter(echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water)
+        radarResponse.getEchos().stream().filter(echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water)
             .map(echo -> echo.getSector()).toList();
 
     Vec2D nextPossiblyShipSector = new Vec2D(shipSector.getX() + direction.getX(), shipSector.getY() + direction.getY());
@@ -197,7 +197,7 @@ public class Helper {
 
   public static List<Vec2D> calcAllowedSurroundingFields(ShipEntityState shipEntityStateMap, List<Sector> notNavigable) {
     Vec2D direction = shipEntityStateMap.getDirection();
-    List<Vec2D> navigableDirections = getNavigableDirections(direction, notNavigable);
+    List<Vec2D> navigableDirections = getNavigableSectors(direction, notNavigable);
 
     Vec2D shipSector = shipEntityStateMap.getSector();
 
@@ -212,7 +212,7 @@ public class Helper {
     return allowedSurroundingFields;
   }
 
-  private static List<Vec2D> getNavigableDirections(Vec2D direction, List<Sector> sectors) {
+  private static List<Vec2D> getNavigableSectors(Vec2D direction, List<Sector> sectors) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(direction);
 
     // alle blockierten Richtungen sammeln
@@ -249,7 +249,7 @@ public class Helper {
       }
 
       Vec2D sector = new Vec2D(surroundSector.getX() + vec2D.getX(), surroundSector.getY() + vec2D.getY());
-      if (surroundSector.equals(sector)){
+      if (surroundSector.equals(sector)) {
         continue;
       }
       level1.add(vec2D);
@@ -258,6 +258,101 @@ public class Helper {
 
     return routePlan;
   }
+
+  public static void getRouteTree(ShipEntityState shipEntityStateMap, List<Sector> notNavigable) {
+    Vec2D direction = shipEntityStateMap.getDirection();
+    List<Vec2D> navigableDirections = getNavigableSectors(direction, notNavigable);
+
+    Vec2D shipSector = shipEntityStateMap.getSector();
+
+    List<Vec2D> allowedSurroundingFields = new ArrayList<>();
+
+    for (Vec2D vec2D : navigableDirections) {
+      allowedSurroundingFields.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
+    }
+
+    for (int i = 0; i < allowedSurroundingFields.size(); i++) {
+      Route route = new Route();
+      Vec2D v = allowedSurroundingFields.get(i);
+      addRoute(route, List.of("01", "12", "23"), List.of(new Vec2D(v.getX(), v.getY()), new Vec2D(v.getX(),v.getY())));
+
+    }
+
+  }
+
+  public static void addRoute(Route route, List<String> path, List<Vec2D> routePoints) {
+
+    Map<String, RouteNode> map = route.getRoute();
+    RouteNode node = null;
+
+    for (String key : path) {
+      node = map.computeIfAbsent(key, k -> new RouteNode());
+      map = node.getChildren();
+    }
+
+    node.getRouteList().addAll(routePoints);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /*private static void fillRouteTree(List<Vec2D> navigableSectors) {
+    List<String> path = new ArrayList<>();
+    Route route = new Route();
+    for (Vec2D vec2D: navigableSectors){
+      path.add(vec2D.getX() + String.valueOf(vec2D.getY()));
+
+      Map<String, RouteNode> currentMap = route.getRoute();
+
+      RouteNode currentNode = null;
+
+      for (String key : path) {
+        currentNode = currentMap.get(key);
+
+        if (currentNode == null) {
+          currentNode = new RouteNode();
+          currentMap.put(key, currentNode);
+        }
+
+        // für den nächsten Durchlauf:
+        currentMap = currentNode.getChildren();
+      }
+
+      route.getRoute().put(vec2D + String.valueOf(vec2D.getY()), currentNode);
+
+      currentNode.getRouteList().add(new Vec2D(vec2D.getX(),  vec2D.getY()));
+      currentNode.getRouteList().add(new Vec2D(vec2D.getX(),  vec2D.getY()));
+
+    }
+
+    System.out.println(route);
+  }*/
+
 }
 
 

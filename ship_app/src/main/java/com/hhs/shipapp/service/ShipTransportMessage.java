@@ -108,7 +108,7 @@ public class ShipTransportMessage {
                 .build())
         .retrieve().body(Boolean.class);
 
-    System.out.println("Antwort vom ShipBaseServer: delete shipData by shipId: " + shipId + " successful: " + response);
+    System.out.println("Antwort vom ShipBaseServer: isShipIdExists: " + shipId + ": " + response);
     return Boolean.TRUE.equals(response);
   }
 

@@ -95,6 +95,12 @@ public class ShipBaseServerController {
     return shipDataService.getShipData(shipId);
   }
 
+  @GetMapping(value = "/getAllShipData")
+  public ResponseEntity<List<ShipData>> getAllShipData() {
+
+    return ResponseEntity.ok(shipDataService.getAllShipData());
+  }
+
   /**
    * @return {@code true} if sector available (not in use by other ship), otherwise {@code false}
    */
