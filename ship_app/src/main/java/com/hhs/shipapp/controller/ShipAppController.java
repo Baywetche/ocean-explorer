@@ -1,7 +1,7 @@
 package com.hhs.shipapp.controller;
 
 import com.hhs.lib.model.AutoPilotData;
-import com.hhs.shipapp.models.messages.RadarResponse;
+import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.service.ShipAppService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +67,9 @@ public class ShipAppController {
       boolean success = shipAppService.navigate(shipId, course, rudder);
       return ResponseEntity.ok(success);
     } catch (IllegalArgumentException e) {
-      // Schiff nicht gefunden oder ungültiger Zustand
       log.info("Navigation failed for ship {}: {}", shipId, e.getMessage());
       return ResponseEntity.ok(false);
     } catch (IllegalStateException e) {
-      // Verbindungs- oder Serverfehler
       log.error("Navigation error for ship {}: {}", shipId, e.getMessage());
       return ResponseEntity.ok(false);
     } catch (Exception e) {

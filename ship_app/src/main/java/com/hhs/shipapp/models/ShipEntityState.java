@@ -23,7 +23,6 @@ import java.util.List;
 public class ShipEntityState {
 
   private String shipId;
-  private String name;
 
   private Vec2D sector;
   private Vec2D direction;

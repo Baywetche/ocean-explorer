@@ -1,11 +1,10 @@
 package com.hhs.shipapp.service;
 
 import com.hhs.lib.model.*;
+import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
-import com.hhs.shipapp.models.messages.RadarResponse;
-import com.hhs.shipapp.util.Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,43 +12,31 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class ShipAppService {
 
+  private final ShipAppComponent shipAppComponent;
   private final ShipAppImpl shipAppImpl;
   private final ShipTransportMessage shipTransportMessage;
-  private final Map<String, ShipEntityState> shipEntityStateMap;
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
 
   public ShipAppService(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
-      Map<String, ShipEntityState> shipEntityStateMap) {
+                        Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
-    this.shipEntityStateMap = shipEntityStateMap;
+    this.shipAppComponent = new ShipAppComponent(this.shipTransportMessage, shipEntityStateMap);
   }
 
-  // Hilfsmethode ab hier
   private void ensureConnectedToShipServer() {
     if (!shipAppImpl.getConnectionState()) {
       shipAppImpl.connectShipClientToShipServer();
-      // Optional: hier prüfen, ob connect erfolgreich war
+
       if (!shipAppImpl.getConnectionState()) {
         log.info("connection to ship server failed");
       }
     }
   }
-
-  private void saveSectorAndShipData(String shipId, String name, int x, int y, int dx, int dy) {
-    SectorData sectorData = new SectorData(shipId, x, y);
-    sectorData.setGround(Ground.Harbour);
-    shipTransportMessage.saveSectorData(sectorData);
-
-    ShipData shipData = new ShipData(shipId, name, x, y, dx, dy);
-    shipTransportMessage.saveShipData(shipData);
-  }
-  // Hilfsmethode Ende
 
   /**
    * Startet ein neues Schiff im angegebenen Sektor mit Richtung.
@@ -57,7 +44,7 @@ public class ShipAppService {
    * @return shipId bei Erfolg oder wirft eine Exception bei Fehlern
    */
   public String launchShip(String name, int x, int y, int dx, int dy) {
-    if (x < 0 || y < 0) {
+    if (x < 0 || x > 99 || y < 0 || y > 99) {
       return "Sector liegt ausserhalb von Forschungsgebiet: " + "(" + x + ", " + y + ")";
     }
 
@@ -74,7 +61,7 @@ public class ShipAppService {
       return "Sector is not free: " + sector;
     }
 
-    // Schiff starten
+    // Schiff landen
     List<ShipMessage> shipMessages = shipAppImpl.launch(name, sector, direction);
     ShipMessage firstMessage = shipMessages.getFirst();
 
@@ -84,14 +71,27 @@ public class ShipAppService {
       return "Ship launch failed: " + firstMessage.getCmd();
     }
 
-    // State aktualisieren
-    ShipEntityState state = Helper.updateShipEntityStateMap(shipId, name, sector, direction);
-    shipEntityStateMap.put(shipId, state);
+    shipAppComponent.setShipId(shipId);
+    shipAppComponent.setShipSector(sector);
+    shipAppComponent.setShipDirection(direction);
+    shipAppComponent.setShipMessages(shipMessages);
+
+    // ShipEntityState befüllen
+    shipAppComponent.fillShipEntityStateMap();
 
     // Daten persistieren
     saveSectorAndShipData(shipId, name, x, y, dx, dy);
 
     return shipId;
+  }
+
+  private void saveSectorAndShipData(String shipId, String name, int x, int y, int dx, int dy) {
+    SectorData sectorData = new SectorData(shipId, x, y);
+    sectorData.setGround(Ground.Harbour);
+    shipTransportMessage.saveSectorData(sectorData);
+
+    ShipData shipData = new ShipData(shipId, name, x, y, dx, dy);
+    shipTransportMessage.saveShipData(shipData);
   }
 
   /**
@@ -100,7 +100,7 @@ public class ShipAppService {
    * @param shipId Die ID des Schiffs
    * @return RadarResponse mit den gescannten Informationen
    * @throws IllegalArgumentException wenn das Schiff nicht existiert
-   * @throws IllegalStateException bei Verbindungs- oder Ausführungsproblemen
+   * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public RadarResponse radar(String shipId) {
     ensureConnectedToShipServer();
@@ -110,25 +110,20 @@ public class ShipAppService {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
     }
 
-    // Radar-Befehl an den Server senden
+    // Radar-Befehl an Server senden
     List<ShipMessage> shipMessages = shipAppImpl.radar();
     if (shipMessages == null || shipMessages.isEmpty()) {
       throw new IllegalStateException("No response received from radar command");
     }
 
-    ShipMessage radarMessage = shipMessages.getFirst();
-
-    // Aktuellen Zustand des Schiffs holen
-    ShipEntityState state = shipEntityStateMap.get(shipId);
-    if (state == null) {
-      throw new IllegalStateException("No state found for ship " + shipId);
-    }
+    // shipMessage in shipAppComponent aktuallisieren
+    shipAppComponent.setShipMessages(shipMessages);
 
     // Radar-Response erstellen
-    RadarResponse radarResponse = Helper.getRadarResponse(radarMessage, state.getSector(), state.getDirection());
+    RadarResponse radarResponse = shipAppComponent.getRadarResponse();
 
     // Gefundene Sektoren persistent speichern
-    Helper.persistSectorData(shipId, shipTransportMessage, shipMessages);
+    shipAppComponent.persistSectorData();
 
     return radarResponse;
   }
@@ -139,7 +134,7 @@ public class ShipAppService {
    * @param shipId Die ID des Schiffs
    * @return die gemessene Tiefe (als Integer)
    * @throws IllegalArgumentException wenn das Schiff nicht existiert
-   * @throws IllegalStateException bei Verbindungsproblemen oder ungültiger Antwort
+   * @throws IllegalStateException    bei Verbindungsproblemen oder ungültiger Antwort
    */
   public int scan(String shipId) {
     ensureConnectedToShipServer();
@@ -156,11 +151,11 @@ public class ShipAppService {
     }
 
     ShipMessage scanMessage = shipMessages.getFirst();
+    shipAppComponent.setShipMessages(shipMessages);
 
     // Sector-Daten aktualisieren
-    Helper.updateSectorData(shipId, shipTransportMessage, shipMessages);
+    shipAppComponent.updateSectorData();
 
-    // Tiefe zurückgeben
     return scanMessage.getDepth();
   }
 
@@ -172,16 +167,10 @@ public class ShipAppService {
    * @param rudder Der gewünschte Rudereinschlag
    * @return true wenn die Navigation erfolgreich war, false bei Crash oder Fehler
    * @throws IllegalArgumentException bei ungültigem shipId oder fehlendem State
-   * @throws IllegalStateException bei Verbindungsproblemen
+   * @throws IllegalStateException    bei Verbindungsproblemen
    */
   public boolean navigate(String shipId, String course, String rudder) {
     ensureConnectedToShipServer();
-
-    // Prüfen, ob das Schiff im In-Memory-State existiert
-    ShipEntityState state = shipEntityStateMap.get(shipId);
-    if (state == null) {
-      throw new IllegalArgumentException("No state found for ship: " + shipId);
-    }
 
     // Prüfen, ob das Schiff in der Datenbank existiert
     if (!shipTransportMessage.isShipIdExists(shipId)) {
@@ -194,31 +183,21 @@ public class ShipAppService {
       throw new IllegalStateException("No response received from navigate command");
     }
 
-    ShipMessage firstMessage = shipMessages.getFirst();
-    boolean success = firstMessage.getCmd() != Commands.crash;
+    boolean success = shipMessages.getFirst().getCmd() != Commands.crash;
 
     if (success) {
+      shipAppComponent.setShipMessages(shipMessages);
+
       // State aktualisieren
-      Helper.updateShipEntityState(shipEntityStateMap, shipId, shipMessages, course, rudder);
+      shipAppComponent.updateShipEntityState(course, rudder);
 
-      // Neue Position und Richtung extrahieren
-      Vec2D newSector = new Vec2D(firstMessage.getSector().getVec2()[0], firstMessage.getSector().getVec2()[1]);
-      Vec2D newDirection = new Vec2D(firstMessage.getDir().getVec2()[0], firstMessage.getDir().getVec2()[1]);
-
-      // ShipData für Update vorbereiten
-      ShipData updatedShipData = new ShipData();
-      updatedShipData.setShipId(shipId);
-      updatedShipData.setShipName(Helper.extractShipNameFromShipId(shipId));
-      updatedShipData.setSectorX(newSector.getX());
-      updatedShipData.setSectorY(newSector.getY());
-      updatedShipData.setDirectionX(newDirection.getX());
-      updatedShipData.setDirectionY(newDirection.getY());
-
-      // In DB aktualisieren
+      // ShipData in DB aktualisieren
+      ShipData updatedShipData = shipAppComponent.fetchUpdatedShipData();
       shipTransportMessage.updateShipData(updatedShipData);
 
       return true;
-    } else {
+    }
+    else {
       // Bei Crash: Verbindung beenden
       exit(shipId);
 
@@ -232,7 +211,7 @@ public class ShipAppService {
    * @param shipId Die ID des Schiffs, das beendet werden soll
    * @return true, wenn der Exit-Befehl erfolgreich gesendet und die Verbindung geschlossen wurde
    * @throws IllegalArgumentException wenn das Schiff nicht existiert
-   * @throws IllegalStateException bei Verbindungsproblemen
+   * @throws IllegalStateException    bei Verbindungsproblemen
    */
   public boolean exit(String shipId) {
     ensureConnectedToShipServer();
@@ -248,8 +227,8 @@ public class ShipAppService {
     // Exit-Befehl an den Server senden und Verbindung schließen
     boolean success = shipAppImpl.exit();
 
-    // Optional: In-Memory-State bereinigen (empfohlen)
-    shipEntityStateMap.remove(shipId);
+    // shipEntityStateMap bereinigen
+    shipAppComponent.removeShipEntityState(shipId);
 
     return success;
   }
@@ -261,23 +240,25 @@ public class ShipAppService {
    * @param shipId Die ID des Schiffs
    * @return AutoPilotData mit Ergebnissen des Schritts (aktuell noch minimal)
    * @throws IllegalArgumentException bei ungültigem Schiff oder fehlendem Zustand
-   * @throws IllegalStateException bei Verbindungs- oder Ausführungsproblemen
+   * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public AutoPilotData runAutoPilot(String shipId) {
     ensureConnectedToShipServer();
-
-    // 1. Schiff-Status prüfen
-    ShipEntityState state = shipEntityStateMap.get(shipId);
-    if (state == null) {
-      throw new IllegalArgumentException("No state found for ship: " + shipId);
-    }
 
     if (!shipTransportMessage.isShipIdExists(shipId)) {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
     }
 
+    // 1. Schiff-Status prüfen
+    ShipEntityState state = shipAppComponent.getShipEntityStateMap().get(shipId);
+    if (state == null) {
+      throw new IllegalArgumentException("No state found for ship: " + shipId);
+    }
+
     // 2. Radar ausführen
     RadarResponse radarResponse = radar(shipId);
+    shipAppComponent.setRadarResponse(radarResponse);
+
     List<Sector> notNavigable = new ArrayList<>(radarResponse.getNotNavigable());
 
     // 3. Relative Koordinaten berechnen
@@ -301,23 +282,23 @@ public class ShipAppService {
     // Optional: Tiefe könnte später in die Entscheidung einfließen
 
     // 5. Blockierende Schiffe / Hindernisse ermitteln
-    Optional<Vec2D> blockingShipSector = Helper.getShipBlockingSector(state, radarResponse);
-    Vec2D newGoalSector = Helper.calcNewGoalShipSectorAfterBlocking(state);
+//    Optional<Vec2D> blockingShipSector = Helper.getShipBlockingSector(state, radarResponse);
+//    Vec2D newGoalSector = Helper.calcNewGoalShipSectorAfterBlocking(state);
 
     // 6. Erlaubte Nachbarfelder berechnen
-    List<Vec2D> allowedSurroundingFields = Helper.calcAllowedSurroundingFields(state, notNavigable);
+//    List<Vec2D> allowedSurroundingFields = Helper.calcAllowedSurroundingFields(state, notNavigable);
 
     // 7. Route-Planung / Baum aufbauen
     // Hier entscheidest du, ob du den Baum jedes Mal neu baust oder speicherst
-    Helper.getRouteTree(state, notNavigable);
+//    Helper.getRouteTree(state, notNavigable);
 
     // TODO: Hier kommt die eigentliche Entscheidungslogik
     // Beispiel: einfachstes Verhalten → erstes erlaubtes Feld nehmen
     Vec2D nextTarget = null;
-    if (!allowedSurroundingFields.isEmpty()) {
-      nextTarget = allowedSurroundingFields.get(0); // ← sehr einfach – später verbessern!
-      // oder: kürzeste Route, A*, Priorität nach Richtung zum Ziel, ...
-    }
+//    if (!allowedSurroundingFields.isEmpty()) {
+//      nextTarget = allowedSurroundingFields.get(0); // ← sehr einfach – später verbessern!
+//      // oder: kürzeste Route, A*, Priorität nach Richtung zum Ziel, ...
+//    }
 
     // TODO: Navigation ausführen (wenn gewünscht)
     // boolean navigateSuccess = navigateTo(shipId, nextTarget); // ← eigene Methode
@@ -335,6 +316,5 @@ public class ShipAppService {
     return result;
   }
 
-  // Hilfsmethode – falls du später navigieren willst
-  // private boolean navigateTo(String shipId, Vec2D target) { ... }
+
 }

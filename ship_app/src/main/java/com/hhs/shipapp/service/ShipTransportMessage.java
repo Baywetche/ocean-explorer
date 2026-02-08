@@ -78,7 +78,7 @@ public class ShipTransportMessage {
     return response;
   }
 
-  public ShipData getShipData(String shipId) {
+  public ShipData getShipDataByShipId(String shipId) {
     ShipData response = restClient.get().uri(
             uriBuilder -> uriBuilder.path("/getShipData")
                 .queryParam("shipId", shipId)
