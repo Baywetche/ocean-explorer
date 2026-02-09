@@ -26,7 +26,7 @@ public class ShipRouteService {
   }
 
   private boolean isSectorExists(int sectorX, int sectorY) {
-    return !shipRouteRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
+    return !shipRouteRepository.findByShipSectorXAndShipSectorY(sectorX, sectorY).isEmpty();
   }
 
   public ResponseEntity<Boolean> deleteAllShipRouteFromDB() {
@@ -36,8 +36,8 @@ public class ShipRouteService {
     return ResponseEntity.ok(true);
   }
 
-  public ResponseEntity<Boolean> deleteShipRouteBySectorXAndSectorY(ShipSector shipSector){
-    if (isSectorExists(shipSector.getShipSectorX(), shipSector.getShipSectorY())){
+  public ResponseEntity<Boolean> deleteShipSectorBySectorXAndSectorY(ShipSector shipSector) {
+    if (isSectorExists(shipSector.getShipSectorX(), shipSector.getShipSectorY())) {
       return ResponseEntity.ok(false);
     }
 

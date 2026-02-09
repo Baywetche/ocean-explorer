@@ -1,18 +1,18 @@
 package com.hhs.shipbaseserver.repository;
 
-import com.hhs.lib.model.ShipData;
+import com.hhs.lib.model.Ship;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface ShipDataRepository extends JpaRepository<ShipData, Long> {
+public interface ShipRepository extends JpaRepository<Ship, Long> {
 
-  Optional<ShipData> findByShipId(String shipId);
+  Optional<Ship> findByShipId(String shipId);
 
-  List<ShipData> findBySectorXAndSectorY(int x, int y);
+  List<Ship> findBySectorXAndSectorY(int x, int y);
 
-  List<ShipData> findByShipIdAndDirectionX(String shipId, int directionX);
+  List<Ship> findByShipIdAndDirectionX(String shipId, int directionX);
 
   boolean existsBySectorXAndSectorY(int sectorX, int sectorY);
 

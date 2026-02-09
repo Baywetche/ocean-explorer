@@ -54,20 +54,20 @@ public class ShipTransportMessage {
   }
 
   /* about ship data */
-  public boolean saveShipData(ShipData shipData) {
+  public boolean saveShipData(Ship ship) {
     boolean response = Boolean.TRUE.equals(restClient.post()
-        .uri("/saveShipData")
-        .body(shipData).retrieve().body(boolean.class));
+                                                     .uri("/saveShipData")
+                                                     .body(ship).retrieve().body(boolean.class));
 
     System.out.println("Antwort vom ShipBaseServer: " + "saving shipData successful: " + response);
 
     return response;
   }
 
-  public boolean updateShipData(ShipData shipData) {
+  public boolean updateShipData(Ship ship) {
     boolean response = Boolean.TRUE.equals(restClient.put()
         .uri("/updateShipData")
-        .body(shipData)
+        .body(ship)
         .retrieve().body(boolean.class));
 
     System.out.println("Antwort vom ShipBaseServer: " + "updating shipData successful: " + response);
@@ -75,12 +75,12 @@ public class ShipTransportMessage {
     return response;
   }
 
-  public ShipData getShipDataByShipId(String shipId) {
-    ShipData response = restClient.get().uri(
+  public Ship getShipDataByShipId(String shipId) {
+    Ship response = restClient.get().uri(
             uriBuilder -> uriBuilder.path("/getShipData")
                 .queryParam("shipId", shipId)
                 .build())
-        .retrieve().body(ShipData.class);
+                              .retrieve().body(Ship.class);
 
     System.out.println("Antwort vom ShipBaseServer: " + "searching for shipData successful: " + response.toString());
 
@@ -112,8 +112,8 @@ public class ShipTransportMessage {
   /* about ship route */
   public void saveShipSector(ShipSector shipSector) {
     String response = restClient.post()
-        .uri("/saveShipSector")
-        .body(shipSector).retrieve().body(String.class);
+                                .uri("/saveShipSector")
+                                .body(shipSector).retrieve().body(String.class);
 
     System.out.println("Antwort vom ShipBaseServer: " + "saving ShipSector successful: " + response);
   }

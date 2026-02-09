@@ -93,8 +93,8 @@ public class ShipAppService {
     sectorData.setGround(Ground.Harbour);
     shipTransportMessage.saveSectorData(sectorData);
 
-    ShipData shipData = new ShipData(shipId, name, x, y, dx, dy);
-    shipTransportMessage.saveShipData(shipData);
+    Ship ship = new Ship(shipId, name, x, y, dx, dy);
+    shipTransportMessage.saveShipData(ship);
   }
 
   /**
@@ -198,8 +198,8 @@ public class ShipAppService {
       shipAppComponent.updateShipEntityState(course, rudder);
 
       // ShipData in DB aktualisieren
-      ShipData updatedShipData = shipAppComponent.fetchUpdatedShipData();
-      shipTransportMessage.updateShipData(updatedShipData);
+      Ship updatedShip = shipAppComponent.fetchUpdatedShipData();
+      shipTransportMessage.updateShipData(updatedShip);
 
       // ShipSector in DB persistieren
       shipAppComponent.saveShipSector();

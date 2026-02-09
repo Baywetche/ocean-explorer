@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @Entity
 @ToString
-public class ShipData {
+public class Ship {
 
     @Id
     private String shipId;
@@ -21,7 +21,7 @@ public class ShipData {
     private int directionX;
     private int directionY;
 
-    public ShipData(String shipId, String shipName, int sectorX, int sectorY, int directionX, int directionY) {
+    public Ship(String shipId, String shipName, int sectorX, int sectorY, int directionX, int directionY) {
         this.shipId = shipId;
         this.shipName = shipName;
         this.sectorX = sectorX;
@@ -31,7 +31,7 @@ public class ShipData {
     }
 
 
-    public ShipData() {
+    public Ship() {
     }
 
 

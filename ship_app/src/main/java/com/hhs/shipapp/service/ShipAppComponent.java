@@ -139,16 +139,16 @@ public class ShipAppComponent {
     state.recordMove(state.getSector(), parsedCourse, parsedRudder);
   }
 
-  public ShipData fetchUpdatedShipData() {
-    ShipData updatedShipData = new ShipData();
-    updatedShipData.setShipId(shipId);
-    updatedShipData.setShipName(Helper.extractShipNameFromShipId(shipId));
-    updatedShipData.setSectorX(shipSector.getX());
-    updatedShipData.setSectorY(shipSector.getY());
-    updatedShipData.setDirectionX(shipDirection.getX());
-    updatedShipData.setDirectionY(shipDirection.getY());
+  public Ship fetchUpdatedShipData() {
+    Ship updatedShip = new Ship();
+    updatedShip.setShipId(shipId);
+    updatedShip.setShipName(Helper.extractShipNameFromShipId(shipId));
+    updatedShip.setSectorX(shipSector.getX());
+    updatedShip.setSectorY(shipSector.getY());
+    updatedShip.setDirectionX(shipDirection.getX());
+    updatedShip.setDirectionY(shipDirection.getY());
 
-    return updatedShipData;
+    return updatedShip;
   }
 
   public void removeShipEntityState(String shipId) {

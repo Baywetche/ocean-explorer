@@ -2,11 +2,11 @@ package com.hhs.shipbaseserver.controller;
 
 import com.hhs.lib.model.RoutePlan;
 import com.hhs.lib.model.SectorData;
-import com.hhs.lib.model.ShipData;
+import com.hhs.lib.model.Ship;
 import com.hhs.lib.model.ShipSector;
 import com.hhs.shipbaseserver.dao.RoutePlanService;
 import com.hhs.shipbaseserver.dao.SectorDataService;
-import com.hhs.shipbaseserver.dao.ShipDataService;
+import com.hhs.shipbaseserver.dao.ShipService;
 import com.hhs.shipbaseserver.dao.ShipRouteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,14 +18,14 @@ import java.util.List;
 public class ShipBaseServerController {
 
   private final SectorDataService sectorDataService;
-  private final ShipDataService shipDataService;
+  private final ShipService shipService;
   private final RoutePlanService routePlanService;
   private final ShipRouteService shipRouteService;
 
-  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService,
-      RoutePlanService routePlanService, ShipRouteService shipRouteService) {
+  public ShipBaseServerController(SectorDataService sectorDataService, ShipService shipService,
+                                  RoutePlanService routePlanService, ShipRouteService shipRouteService) {
     this.sectorDataService = sectorDataService;
-    this.shipDataService = shipDataService;
+    this.shipService = shipService;
     this.routePlanService = routePlanService;
     this.shipRouteService = shipRouteService;
   }
@@ -75,35 +75,35 @@ public class ShipBaseServerController {
   /**
    * Saves the given ship data into the database table.
    *
-   * @param shipData the ship data to be saved
+   * @param ship the ship data to be saved
    * @return {@code true} if the ship data did not previously exist and was successfully saved,
    * {@code false} otherwise
    */
   @PostMapping(value = "/saveShipData")
-  public ResponseEntity<Boolean> saveShipData(@RequestBody ShipData shipData) {
-    System.out.println("Empfangen: " + shipData.toString());
+  public ResponseEntity<Boolean> saveShipData(@RequestBody Ship ship) {
+    System.out.println("Empfangen: " + ship.toString());
 
-    return shipDataService.save(shipData);
+    return shipService.save(ship);
   }
 
   @PutMapping(value = "/updateShipData")
-  public ResponseEntity<Boolean> updateShipData(@RequestBody ShipData shipData) {
-    System.out.println("Empfangen: " + shipData.toString());
+  public ResponseEntity<Boolean> updateShipData(@RequestBody Ship ship) {
+    System.out.println("Empfangen: " + ship.toString());
 
-    return shipDataService.update(shipData);
+    return shipService.update(ship);
   }
 
   @GetMapping(value = "/getShipData")
-  public ResponseEntity<ShipData> getShipData(@RequestParam("shipId") String shipId) {
+  public ResponseEntity<Ship> getShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId.toString());
 
-    return shipDataService.getShipData(shipId);
+    return shipService.getShipData(shipId);
   }
 
   @GetMapping(value = "/getAllShipData")
-  public ResponseEntity<List<ShipData>> getAllShipData() {
+  public ResponseEntity<List<Ship>> getAllShipData() {
 
-    return ResponseEntity.ok(shipDataService.getAllShipData());
+    return ResponseEntity.ok(shipService.getAllShipData());
   }
 
   /**
@@ -113,7 +113,7 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> isSectorAvailable(@RequestParam("sectorX") int sectorX, @RequestParam("sectorY") int sectorY) {
     System.out.println("Empfangen: " + "(" + sectorX + "," + sectorY + ")");
 
-    return shipDataService.istSectorExist(sectorX, sectorY);
+    return shipService.istSectorExist(sectorX, sectorY);
   }
 
   /**
@@ -124,7 +124,7 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> deleteShipData(@RequestParam("shipId") String shipId) {
     System.out.println("Empfangen: " + shipId);
 
-    return shipDataService.delete(shipId);
+    return shipService.delete(shipId);
   }
 
   @PostMapping(value = "/saveShipSector")
@@ -144,7 +144,7 @@ public class ShipBaseServerController {
   @GetMapping(value = "/checkShipIdExists")
   public ResponseEntity<Boolean> isShipIdExist(@RequestParam("shipId") String shipId) {
 
-    return shipDataService.existShipId(shipId);
+    return shipService.existShipId(shipId);
   }
 
   @PostMapping(value = "/saveRoutePlan")
