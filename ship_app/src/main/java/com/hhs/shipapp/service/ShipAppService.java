@@ -82,6 +82,9 @@ public class ShipAppService {
     // Daten persistieren
     saveSectorAndShipData(shipId, name, x, y, dx, dy);
 
+    // ShipSector in DB persistieren
+    shipAppComponent.saveShipSector();
+
     return shipId;
   }
 
@@ -188,12 +191,18 @@ public class ShipAppService {
     if (success) {
       shipAppComponent.setShipMessages(shipMessages);
 
+      // ship sector und direction aktualisieren
+      shipAppComponent.updateShipSectorAndDirection();
+
       // State aktualisieren
       shipAppComponent.updateShipEntityState(course, rudder);
 
       // ShipData in DB aktualisieren
       ShipData updatedShipData = shipAppComponent.fetchUpdatedShipData();
       shipTransportMessage.updateShipData(updatedShipData);
+
+      // ShipSector in DB persistieren
+      shipAppComponent.saveShipSector();
 
       return true;
     }

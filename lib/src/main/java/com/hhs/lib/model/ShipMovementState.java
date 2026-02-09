@@ -8,13 +8,13 @@ import lombok.ToString;
 @Data
 @Entity
 @ToString
-public class ShipRoad {
+public class ShipMovementState {
 
   @Id
   private Long id;
 
-  private int shipSectorPositionX;
-  private int shipSectorPositionY;
+  private int shipPositionSectorX;
+  private int shipPositionSectorY;
 
   private int shipDirectionX;
   private int shipDirectionY;
@@ -25,10 +25,10 @@ public class ShipRoad {
   private int targetSectorX;
   private int targetSectorY;
 
-  public ShipRoad(int shipSectorPositionX, int shipSectorPositionY, int shipDirectionX, int shipDirectionY, int targetSectorX,
+  public ShipMovementState(int shipPositionSectorX, int shipPositionSectorY, int shipDirectionX, int shipDirectionY, int targetSectorX,
       int targetSectorY) {
-    this.shipSectorPositionX = shipSectorPositionX;
-    this.shipSectorPositionY = shipSectorPositionY;
+    this.shipPositionSectorX = shipPositionSectorX;
+    this.shipPositionSectorY = shipPositionSectorY;
     this.shipDirectionX = shipDirectionX;
     this.shipDirectionY = shipDirectionY;
     this.targetSectorX = targetSectorX;
@@ -37,7 +37,7 @@ public class ShipRoad {
     setForbiddenSector();
   }
 
-  public ShipRoad() {
+  public ShipMovementState() {
     setForbiddenSector();
   }
 

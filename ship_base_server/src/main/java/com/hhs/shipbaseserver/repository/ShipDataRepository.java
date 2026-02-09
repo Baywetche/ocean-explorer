@@ -12,7 +12,7 @@ public interface ShipDataRepository extends JpaRepository<ShipData, Long> {
 
   List<ShipData> findBySectorXAndSectorY(int x, int y);
 
-  List<ShipData> findByShipIdAndDirectionX(String shipId, int dirX);
+  List<ShipData> findByShipIdAndDirectionX(String shipId, int directionX);
 
   boolean existsBySectorXAndSectorY(int sectorX, int sectorY);
 

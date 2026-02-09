@@ -3,9 +3,11 @@ package com.hhs.shipbaseserver.controller;
 import com.hhs.lib.model.RoutePlan;
 import com.hhs.lib.model.SectorData;
 import com.hhs.lib.model.ShipData;
+import com.hhs.lib.model.ShipSector;
 import com.hhs.shipbaseserver.dao.RoutePlanService;
 import com.hhs.shipbaseserver.dao.SectorDataService;
 import com.hhs.shipbaseserver.dao.ShipDataService;
+import com.hhs.shipbaseserver.dao.ShipRouteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,11 +20,14 @@ public class ShipBaseServerController {
   private final SectorDataService sectorDataService;
   private final ShipDataService shipDataService;
   private final RoutePlanService routePlanService;
+  private final ShipRouteService shipRouteService;
 
-  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService, RoutePlanService routePlanService) {
+  public ShipBaseServerController(SectorDataService sectorDataService, ShipDataService shipDataService,
+      RoutePlanService routePlanService, ShipRouteService shipRouteService) {
     this.sectorDataService = sectorDataService;
     this.shipDataService = shipDataService;
     this.routePlanService = routePlanService;
+    this.shipRouteService = shipRouteService;
   }
 
   /**
@@ -120,6 +125,20 @@ public class ShipBaseServerController {
     System.out.println("Empfangen: " + shipId);
 
     return shipDataService.delete(shipId);
+  }
+
+  @PostMapping(value = "/saveShipSector")
+  public ResponseEntity<Boolean> saveShipSector(@RequestBody ShipSector shipSector){
+    shipRouteService.save(shipSector);
+
+    return ResponseEntity.ok(true);
+  }
+
+  @GetMapping(value = "/getShipRoute")
+  public ResponseEntity<List<ShipSector>> getShipRoute(){
+    List<ShipSector> shipSector = shipRouteService.findShipRoute();
+
+    return ResponseEntity.ok(shipSector);
   }
 
   @GetMapping(value = "/checkShipIdExists")

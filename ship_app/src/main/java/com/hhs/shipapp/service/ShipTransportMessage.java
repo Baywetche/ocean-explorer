@@ -1,9 +1,6 @@
 package com.hhs.shipapp.service;
 
-import com.hhs.lib.model.RoutePlan;
-import com.hhs.lib.model.SectorData;
-import com.hhs.lib.model.ShipData;
-import com.hhs.lib.model.Vec2D;
+import com.hhs.lib.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -112,6 +109,29 @@ public class ShipTransportMessage {
     return Boolean.TRUE.equals(response);
   }
 
+  /* about ship route */
+  public void saveShipSector(ShipSector shipSector) {
+    String response = restClient.post()
+        .uri("/saveShipSector")
+        .body(shipSector).retrieve().body(String.class);
+
+    System.out.println("Antwort vom ShipBaseServer: " + "saving ShipSector successful: " + response);
+  }
+
+/*  public List<ShipRoute> getShipRoute() {
+    List<ShipRoute> response = restClient.get().uri(
+            uriBuilder -> uriBuilder.path("/getShipRoute")
+                .build())
+        .retrieve().body(new ParameterizedTypeReference<>() {
+
+        });
+
+    System.out.println("Antwort vom ShipBaseServer: " + "searching for ShipRoute successful: " + response.toString());
+
+    return response;
+  }*/
+
+  /* about ship autopilot */
   public boolean saveRoutePlan(RoutePlan routePlan) {
     boolean response = Boolean.TRUE.equals(restClient.post()
         .uri("/saveRoutePlan")

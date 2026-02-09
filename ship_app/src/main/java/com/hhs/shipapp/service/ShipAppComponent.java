@@ -20,12 +20,14 @@ import java.util.*;
 @Getter
 @Setter
 public class ShipAppComponent {
+
   private final Map<String, ShipEntityState> shipEntityStateMap;
   private final ShipTransportMessage shipTransportMessage;
 
   private String shipId;
   private Vec2D shipSector;
   private Vec2D shipDirection;
+
   private RadarResponse radarResponse;
   private Vec2D newGoalShipSectorAfterBlocking;
 
@@ -39,12 +41,17 @@ public class ShipAppComponent {
 
   private final Logger log = LoggerFactory.getLogger(ShipAppComponent.class);
 
-
   public ShipAppComponent(ShipTransportMessage shipTransportMessage, Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
   }
 
+  public void updateShipSectorAndDirection() {
+    ShipMessage shipMessage = shipMessages.getFirst();
+
+    shipSector = new Vec2D(shipMessage.getSector().getVec2()[0], shipMessage.getSector().getVec2()[1]);
+    shipDirection = new Vec2D(shipMessage.getDir().getVec2()[0], shipMessage.getDir().getVec2()[1]);
+  }
 
   public void fillShipEntityStateMap() {
     ShipEntityState state = new ShipEntityState();
@@ -64,7 +71,7 @@ public class ShipAppComponent {
 
     for (Echo echo : echoList) {
       Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - shipSector.getX(),
-                                    echo.getSector().getVec2()[1] - shipSector.getY());
+          echo.getSector().getVec2()[1] - shipSector.getY());
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -102,16 +109,16 @@ public class ShipAppComponent {
     sectorData.setStddev(shipMessages.getFirst().getStddev());
 
     log.info("SectorData updated | shipId={} | sectorX={} | sectorY={} | depth={} | stddev={}", sectorData.getShipId(),
-             sectorData.getSectorX(), sectorData.getSectorY(), sectorData.getDepth(), sectorData.getStddev());
+        sectorData.getSectorX(), sectorData.getSectorY(), sectorData.getDepth(), sectorData.getStddev());
 
     shipTransportMessage.updateSectorData(sectorData);
   }
 
   public void updateShipEntityState(String course, String rudder) {
     Vec2D newShipSector = new Vec2D(shipMessages.getFirst().getSector().getVec2()[0],
-                                    shipMessages.getFirst().getSector().getVec2()[1]);
+        shipMessages.getFirst().getSector().getVec2()[1]);
     Vec2D newShipDirection = new Vec2D(shipMessages.getFirst().getDir().getVec2()[0],
-                                       shipMessages.getFirst().getDir().getVec2()[1]);
+        shipMessages.getFirst().getDir().getVec2()[1]);
 
     shipSector = newShipSector;
     shipDirection = newShipDirection;
@@ -148,16 +155,25 @@ public class ShipAppComponent {
     shipEntityStateMap.remove(shipId);
   }
 
-  /*methods for Auto pilot*/
+  /* methods for shipRoute */
+  public void saveShipSector() {
+    ShipSector shipSector = new ShipSector();
+    shipSector.setShipSectorX(this.shipSector.getX());
+    shipSector.setShipSectorY(this.shipSector.getY());
+
+    shipTransportMessage.saveShipSector(shipSector);
+  }
+
+  /* methods for Auto pilot */
   public Optional<Vec2D> findShipBlockingSector() {
     Vec2D nextSector = new Vec2D(shipSector.getX() + shipDirection.getX(), shipSector.getY() + shipDirection.getY());
 
     shipBlockingSector = radarResponse.getEchos().stream()
-                                      .filter(
-                                          echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water)
-                                      .map(Echo::getSector).map(Sector::getVec2)
-                                      .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
-                                      .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
+        .filter(
+            echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water)
+        .map(Echo::getSector).map(Sector::getVec2)
+        .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
+        .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
 
     if (shipBlockingSector.isPresent()) {
       calcNewGoalShipSectorAfterBlocking();
@@ -168,7 +184,7 @@ public class ShipAppComponent {
 
   private void calcNewGoalShipSectorAfterBlocking() {
     newGoalShipSectorAfterBlocking = new Vec2D(shipSector.getX() + shipDirection.getX() + shipDirection.getX(),
-                                               shipSector.getY() + shipDirection.getY() + shipDirection.getY());
+        shipSector.getY() + shipDirection.getY() + shipDirection.getY());
 
     log.info("nextAllowedShipSector: " + newGoalShipSectorAfterBlocking);
   }
