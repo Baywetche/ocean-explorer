@@ -286,40 +286,11 @@ public class ShipAppService {
 
       scan(shipId);
 
-      if (x == 50 && y == 98){
-        navigate(shipId, "Forward", "Right");
-      }
-      else if (x == 51 && y == 99){
-        navigate(shipId, "Backward", "Left");
-      }
-      else if (x == 50 && y == 99){
-        navigate(shipId, "Forward", "Right");
-      }
-      else if (x == 50 && y == 98){
-        navigate(shipId, "Forward", "Right");
-      }
-
-
-      if (x == 51 && y == 1){
-        navigate(shipId, "Forward", "Left");
-      }
-      if (x == 52 && y == 0){
-        navigate(shipId, "Backward", "Right");
-      }
-      if (x == 51 && y == 0){
-        navigate(shipId, "Backward", "Right");
-      }
-
-      if (x == 52 && y == 1){
-        navigate(shipId, "Forward", "Left");
-      }
-
       x = shipAppComponent.getShipSector().getX();
       y = shipAppComponent.getShipSector().getY();
 
 
       navigate(shipId, "Forward", "Center");
-
     }
 
 
@@ -330,17 +301,17 @@ public class ShipAppService {
 
 
 /*
+
       if (x == 50 && y == 98){
         navigate(shipId, "Forward", "Right");
       }
-      if (x == 51 && y == 99){
+      else if (x == 51 && y == 99){
         navigate(shipId, "Backward", "Left");
       }
-      if (x == 50 && y == 99){
-        navigate(shipId, "Backward", "Left");
+      else if (x == 50 && y == 99){
+        navigate(shipId, "Forward", "Right");
       }
-
-      if (x == 51 && y == 98){
+      else if (x == 50 && y == 98){
         navigate(shipId, "Forward", "Right");
       }
 

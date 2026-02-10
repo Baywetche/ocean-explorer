@@ -54,7 +54,7 @@ public class ShipAppImpl implements ShipApp {
     clientConnection.sendMessage2Server(msg);
 
     try {
-      Thread.sleep(200);
+      Thread.sleep(50);
       List<String> responses = clientConnection.receiveMessagesFromServer();
       messages.add(!responses.getFirst().contains("\"cmd\":\"crash\"")
           ? responseManager.move2dResponse(responses.getFirst())
@@ -88,7 +88,7 @@ public class ShipAppImpl implements ShipApp {
     ShipMessage msg = ShipMessage.builder().cmd(Commands.radar).build();
     clientConnection.sendMessage2Server(msg);
     try {
-      Thread.sleep(200);
+      Thread.sleep(25);
       List<String> responses = clientConnection.receiveMessagesFromServer();
       ShipMessage shipMessage = responseManager.radarResponse(responses.getFirst());
       messages.add(shipMessage);
@@ -115,7 +115,7 @@ public class ShipAppImpl implements ShipApp {
     clientConnection.sendMessage2Server(msg);
 
     try {
-      Thread.sleep(200);
+      Thread.sleep(25);
       List<String> responses = clientConnection.receiveMessagesFromServer();
       ShipMessage scanResponse = responseManager.scanResponse(responses.getFirst());
       messages.add(scanResponse);
