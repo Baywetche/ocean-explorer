@@ -20,7 +20,6 @@ public class ShipAppService {
   private final ShipAppImpl shipAppImpl;
   private final ShipTransportMessage shipTransportMessage;
   private final ShipAppComponent shipAppComponent;
-
   private final Set<String> checkedShipIds = new HashSet<>();
 
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
@@ -257,6 +256,9 @@ public class ShipAppService {
     // Exit-Befehl an den Server senden und Verbindung schließen
     boolean success = shipAppImpl.exit();
 
+    // entfernen von shipId von checkedShipIds
+    checkedShipIds.remove(shipId);
+
     // shipEntityStateMap bereinigen
     shipAppComponent.removeShipEntityState(shipId);
 
@@ -273,29 +275,50 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public AutoPilotData runAutoPilot(String shipId) {
-
-    // 2. Radar ausführen
     AutoPilotData result = new AutoPilotData();
-
 
     int x = shipAppComponent.getShipSector().getX();
     int y = shipAppComponent.getShipSector().getY();
 
-    while (y < 99) {
+    while (x < 99 && y < 99) {
       RadarResponse radarResponse = radar(shipId);
       shipAppComponent.setRadarResponse(radarResponse);
 
       scan(shipId);
 
+      if (x == 50 && y == 98){
+        navigate(shipId, "Forward", "Right");
+      }
+      else if (x == 51 && y == 99){
+        navigate(shipId, "Backward", "Left");
+      }
+      else if (x == 50 && y == 99){
+        navigate(shipId, "Forward", "Right");
+      }
+      else if (x == 50 && y == 98){
+        navigate(shipId, "Forward", "Right");
+      }
 
 
+      if (x == 51 && y == 1){
+        navigate(shipId, "Forward", "Left");
+      }
+      if (x == 52 && y == 0){
+        navigate(shipId, "Backward", "Right");
+      }
+      if (x == 51 && y == 0){
+        navigate(shipId, "Backward", "Right");
+      }
+
+      if (x == 52 && y == 1){
+        navigate(shipId, "Forward", "Left");
+      }
 
       x = shipAppComponent.getShipSector().getX();
       y = shipAppComponent.getShipSector().getY();
 
 
       navigate(shipId, "Forward", "Center");
-
 
     }
 
