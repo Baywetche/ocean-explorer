@@ -9,19 +9,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ShipAppService {
 
-  private final ShipAppComponent shipAppComponent;
   private final ShipAppImpl shipAppImpl;
   private final ShipTransportMessage shipTransportMessage;
+  private final ShipAppComponent shipAppComponent;
+
+  private final Set<String> checkedShipIds = new HashSet<>();
+
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
 
-  public ShipAppService(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
+  public ShipAppService(ShipAppImpl shipAppImpl,
+                        ShipTransportMessage shipTransportMessage,
                         Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
@@ -109,7 +114,7 @@ public class ShipAppService {
     ensureConnectedToShipServer();
 
     // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.isShipIdExists(shipId)) {
+    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
     }
 
@@ -143,7 +148,7 @@ public class ShipAppService {
     ensureConnectedToShipServer();
 
     // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.isShipIdExists(shipId)) {
+    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
     }
 
@@ -176,7 +181,7 @@ public class ShipAppService {
     ensureConnectedToShipServer();
 
     // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.isShipIdExists(shipId)) {
+    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
     }
 
@@ -226,7 +231,7 @@ public class ShipAppService {
     ensureConnectedToShipServer();
 
     // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.isShipIdExists(shipId)) {
+    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
       throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
     }
 
@@ -254,76 +259,77 @@ public class ShipAppService {
   public AutoPilotData runAutoPilot(String shipId) {
     ensureConnectedToShipServer();
 
-    if (!shipTransportMessage.isShipIdExists(shipId)) {
-      throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
+    if (!checkedShipIds.contains(shipId)) {
+      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
+        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+      }
+
+      checkedShipIds.add(shipId);
     }
 
-    // 1. Schiff-Status prüfen
-    ShipEntityState state = shipAppComponent.getShipEntityStateMap().get(shipId);
-    if (state == null) {
-      throw new IllegalArgumentException("No state found for ship: " + shipId);
-    }
 
     // 2. Radar ausführen
-    RadarResponse radarResponse = radar(shipId);
-    shipAppComponent.setRadarResponse(radarResponse);
-
-    List<Sector> notNavigable = new ArrayList<>(radarResponse.getNotNavigable());
-
-    // 3. Relative Koordinaten berechnen
-    RelativeCoordinateSystem relCoord = new RelativeCoordinateSystem(state.getDirection());
-
-    // Ost und West als grundsätzlich nicht navigierbar behandeln
-    Sector east = new Sector(relCoord.getCoordinates().get(2));
-    Sector west = new Sector(relCoord.getCoordinates().get(6));
-
-    if (!notNavigable.contains(east)) {
-      notNavigable.add(east);
-    }
-    if (!notNavigable.contains(west)) {
-      notNavigable.add(west);
-    }
-
-    System.out.println("Not navigable sectors: " + notNavigable);
-
-    // 4. Scan ausführen
-    int depth = scan(shipId);
-    // Optional: Tiefe könnte später in die Entscheidung einfließen
-
-    // 5. Blockierende Schiffe / Hindernisse ermitteln
-//    Optional<Vec2D> blockingShipSector = Helper.getShipBlockingSector(state, radarResponse);
-//    Vec2D newGoalSector = Helper.calcNewGoalShipSectorAfterBlocking(state);
-
-    // 6. Erlaubte Nachbarfelder berechnen
-//    List<Vec2D> allowedSurroundingFields = Helper.calcAllowedSurroundingFields(state, notNavigable);
-
-    // 7. Route-Planung / Baum aufbauen
-    // Hier entscheidest du, ob du den Baum jedes Mal neu baust oder speicherst
-//    Helper.getRouteTree(state, notNavigable);
-
-    // TODO: Hier kommt die eigentliche Entscheidungslogik
-    // Beispiel: einfachstes Verhalten → erstes erlaubtes Feld nehmen
-    Vec2D nextTarget = null;
-//    if (!allowedSurroundingFields.isEmpty()) {
-//      nextTarget = allowedSurroundingFields.get(0); // ← sehr einfach – später verbessern!
-//      // oder: kürzeste Route, A*, Priorität nach Richtung zum Ziel, ...
-//    }
-
-    // TODO: Navigation ausführen (wenn gewünscht)
-    // boolean navigateSuccess = navigateTo(shipId, nextTarget); // ← eigene Methode
-
-    // 8. Ergebnis zusammenfassen
     AutoPilotData result = new AutoPilotData();
-    // result.setNextMove(nextTarget);
-    // result.setSuccess(navigateSuccess);
-    // result.setDepth(depth);
-    // result.setBlockedBy(blockingShipSector.orElse(null));
 
-    // Optional: Route-Plan speichern
-    // shipTransportMessage.saveRoutePlan(...);
+
+    int x = shipAppComponent.getShipSector().getX();
+    int y = shipAppComponent.getShipSector().getY();
+
+    while (y < 99) {
+      RadarResponse radarResponse = radar(shipId);
+      shipAppComponent.setRadarResponse(radarResponse);
+
+      scan(shipId);
+
+
+
+
+      x = shipAppComponent.getShipSector().getX();
+      y = shipAppComponent.getShipSector().getY();
+
+
+      navigate(shipId, "Forward", "Center");
+
+
+    }
+
 
     return result;
   }
 
-
 }
+
+
+/*
+      if (x == 50 && y == 98){
+        navigate(shipId, "Forward", "Right");
+      }
+      if (x == 51 && y == 99){
+        navigate(shipId, "Backward", "Left");
+      }
+      if (x == 50 && y == 99){
+        navigate(shipId, "Backward", "Left");
+      }
+
+      if (x == 51 && y == 98){
+        navigate(shipId, "Forward", "Right");
+      }
+
+
+      if (x == 51 && y == 1){
+        navigate(shipId, "Forward", "Left");
+      }
+      if (x == 52 && y == 0){
+        navigate(shipId, "Backward", "Right");
+      }
+      if (x == 51 && y == 0){
+        navigate(shipId, "Backward", "Right");
+      }
+
+      if (x == 52 && y == 1){
+        navigate(shipId, "Forward", "Left");
+      }
+
+
+      */

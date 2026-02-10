@@ -98,7 +98,7 @@ public class ShipTransportMessage {
     return Boolean.TRUE.equals(response);
   }
 
-  public boolean isShipIdExists(String shipId) {
+  public boolean existsShipIdInDB(String shipId) {
     Boolean response = restClient.get().uri(
             uriBuilder -> uriBuilder.path("/checkShipIdExists")
                 .queryParam("shipId", shipId)
