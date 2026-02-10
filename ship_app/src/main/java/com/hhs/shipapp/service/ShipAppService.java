@@ -113,9 +113,13 @@ public class ShipAppService {
   public RadarResponse radar(String shipId) {
     ensureConnectedToShipServer();
 
-    // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
-      throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
+    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
+    if (!checkedShipIds.contains(shipId)) {
+      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
+        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+      }
+
+      checkedShipIds.add(shipId);
     }
 
     // Radar-Befehl an Server senden
@@ -147,9 +151,13 @@ public class ShipAppService {
   public int scan(String shipId) {
     ensureConnectedToShipServer();
 
-    // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
-      throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
+    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
+    if (!checkedShipIds.contains(shipId)) {
+      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
+        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+      }
+
+      checkedShipIds.add(shipId);
     }
 
     // Scan-Befehl an den Server senden
@@ -180,9 +188,13 @@ public class ShipAppService {
   public boolean navigate(String shipId, String course, String rudder) {
     ensureConnectedToShipServer();
 
-    // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
-      throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
+    if (!checkedShipIds.contains(shipId)) {
+      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
+        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+      }
+
+      checkedShipIds.add(shipId);
     }
 
     // Navigation ausführen
@@ -230,9 +242,13 @@ public class ShipAppService {
   public boolean exit(String shipId) {
     ensureConnectedToShipServer();
 
-    // Prüfen, ob das Schiff in der Datenbank existiert
-    if (!shipTransportMessage.existsShipIdInDB(shipId)) {
-      throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist");
+    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
+    if (!checkedShipIds.contains(shipId)) {
+      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
+        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
+      }
+
+      checkedShipIds.add(shipId);
     }
 
     // Schiff-Daten aus der Datenbank entfernen
@@ -257,17 +273,6 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public AutoPilotData runAutoPilot(String shipId) {
-    ensureConnectedToShipServer();
-
-    // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
-    if (!checkedShipIds.contains(shipId)) {
-      if (!shipTransportMessage.existsShipIdInDB(shipId)) {
-        throw new IllegalArgumentException("Ship with ID " + shipId + " does not exist in database");
-      }
-
-      checkedShipIds.add(shipId);
-    }
-
 
     // 2. Radar ausführen
     AutoPilotData result = new AutoPilotData();
