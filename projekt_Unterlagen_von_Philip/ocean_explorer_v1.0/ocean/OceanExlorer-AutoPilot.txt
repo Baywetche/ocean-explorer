@@ -1,0 +1,93 @@
+Schiff-Richtungen: Norden, Süden, Westen und Osten
+
+start-Autopilot aus belibiegen Positionen:
+
+- fahre auf sector (0, y):
+	- fahre immer nach Westen
+	- wenn blockiert:
+		- umfahren
+		
+- fahre auf sector (0, 0)
+	- y != 0, fahre nach Süden
+	- wenn Hindernis:
+		- umfahren
+	- setze Schiff-Richtung auf Norden
+	
+- richte die Schiff-Richtung nach Norden
+
+- fahre gerade aus bis zum y = 98:
+	- wenn y = 98, fahre auf (x + 1, y + 1).
+	- wenn y = 99, fahre auf (x - 1, y).
+	- wenn y = 99, fahre auf (x + 1, y - 1).
+	- dann fahre nach Süden
+	- richte die Schiff-Richtung nach Süden.
+	
+- umfahren:
+	- fahre ein Schritt rückwärts zum letzten SchiffSector.
+	- Halte dich aber auf die Hand-an-der-wand-Regel
+	- ist Schiff-Richtung nach Norden orientiert, fahre das Hindernis von rechts um. 
+	- ist Schiff-Richtung nach Süden orientiert, fahre das Hindernis von links um.
+
+
+
+
+
+
+
+
+
+
+
+
+
+ist Schiff-sector (x = 99, y = 0), stopp-Autopilot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+start-Autopilot aus belibiegen Position:
+
+- fahre auf sector (0, y): 1*
+	- fahre immer nach Westen
+	- wenn blockiert:
+		- fahre ein Schritt rückwärts zum letzten SchiffSector.
+		- y = 0, fahre auf (x - 1, y + 1)
+		- y != 0, fahre auf (x - 1, y)
+	- wiederhole oberen Schritte solange, bis die Richtung (0, y).
+		
+- fahre auf sector (0, 0)
+	- y != 0, fahre nach Süden
+	- wenn Hindernis:
+		- umfahren
+	
+- richte die Schiff-Richtung nach Norden
+
+- fahre gerade aus bis zum y = 98:
+	- wenn y = 98, fahre auf (x + 1, y + 1).
+	- wenn y = 99, fahre auf (x - 1, y).
+	- wenn y = 99, fahre auf (x + 1, y - 1).
+	- dann fahre nach Süden
+	- richte die Schiff-Richtung nach Süden.
+	
+- umfahren:
+	- fahre ein Schritt rückwärts zum letzten SchiffSector.
+	- Halte dich aber auf die Hand-an-der-wand-Regel
+	- ist Schiff-Richtung nach Norden orientiert, fahre das Hindernis von rechts um. 
+	- ist Schiff-Richtung nach Süden orientiert, fahre das Hindernis von links um.
+
+
+
+ist Schiff-sector (x = 99, y = 0), stopp-Autopilot

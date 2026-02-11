@@ -184,7 +184,7 @@ public class ShipAppService {
    * @throws IllegalArgumentException bei ungültigem shipId oder fehlendem State
    * @throws IllegalStateException    bei Verbindungsproblemen
    */
-  public boolean navigate(String shipId, String course, String rudder) {
+  public Vec2D navigate(String shipId, String course, String rudder) {
     ensureConnectedToShipServer();
 
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
@@ -220,13 +220,13 @@ public class ShipAppService {
       // ShipSector in DB persistieren
       shipAppComponent.saveShipSector();
 
-      return true;
+      return shipAppComponent.getShipDirection();
     }
     else {
       // Bei Crash: Verbindung beenden
       exit(shipId);
 
-      return false;
+      return null;
     }
   }
 
@@ -275,6 +275,8 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public AutoPilotData runAutoPilot(String shipId) {
+    shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
+
     AutoPilotData result = new AutoPilotData();
 
     int x = shipAppComponent.getShipSector().getX();

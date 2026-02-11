@@ -39,6 +39,8 @@ public class ShipAppComponent {
 
   private RadarResponse radarResponse;
 
+  private Vec2D shipGoalDirection;
+
   private Optional<Vec2D> shipBlockingSector;
 
   private final Logger log = LoggerFactory.getLogger(ShipAppComponent.class);
