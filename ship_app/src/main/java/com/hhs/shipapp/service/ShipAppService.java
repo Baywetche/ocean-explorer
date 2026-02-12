@@ -47,11 +47,11 @@ public class ShipAppService {
    */
   public String launchShip(String name, int x, int y, int dx, int dy) {
     if (x < 0 || x > 99 || y < 0 || y > 99) {
-      return "Error";
+      return "Sector liegt ausserhalb von Forschungsgebiet: " + "(" + x + ", " + y + ")";
     }
 
     if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
-      return "Error";
+      return "unerwartete Richtungseingabe: " + "(" + dx + ", " + dy + ")";
     }
 
     ensureConnectedToShipServer();
@@ -60,7 +60,7 @@ public class ShipAppService {
     Vec2D direction = new Vec2D(dx, dy);
 
     if (!shipTransportMessage.isSectorFree(sector)) {
-      return "Error";
+      return "Sector is not free: " + sector;
     }
 
     // Schiff landen
@@ -70,7 +70,7 @@ public class ShipAppService {
     String shipId = firstMessage.getId();
 
     if (firstMessage.getCmd() != Commands.launched) {
-      return "Error";
+      return "Ship launch failed: " + firstMessage.getCmd();
     }
 
     shipAppComponent.setShipId(shipId);
@@ -218,7 +218,8 @@ public class ShipAppService {
       // ShipSector in DB persistieren
       shipAppComponent.saveShipSector();
 
-      return new NavigateResponse(shipAppComponent.getShipDirection().getX(), shipAppComponent.getShipDirection().getY());
+      return new NavigateResponse(shipAppComponent.getShipDirection().getX(),
+                                  shipAppComponent.getShipDirection().getY());
     }
     else {
       // Bei Crash: Verbindung beenden
@@ -290,48 +291,59 @@ public class ShipAppService {
       y = shipAppComponent.getShipSector().getY();
 
       Optional<Vec2D> shipBlockingSector = shipAppComponent.findShipBlockingSector();
-      if (shipBlockingSector.isPresent()){
-        Thread.sleep(2000);
+      if (shipBlockingSector.isPresent()) {
         navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+        Thread.sleep(2000);
 
         wallFollowRight(shipId);
-        int i = 0;
-        while (i < 7){
-          wallFollowLeft(shipId);
-          i++;
+
+        boolean driveableToGoalDirection = false;
+        while (!driveableToGoalDirection) {
+          Thread.sleep(2000);
+          driveableToGoalDirection = wallFollowLeft(shipId);
+
+          if (shipAppComponent.getShipSector().getX() == 0 && shipAppComponent.driveableToGoalDirection()) {
+            navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+            break;
+          }
         }
+
+        continue;
       }
 
-
-      navigate(shipId, "Forward", "Center");
-
-
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
     }
-
 
     return result;
   }
 
-  void wallFollowLeft(String shipId) {
+  boolean wallFollowLeft(String shipId) {
     radar(shipId);
     shipAppComponent.calcNavigableDirections();
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-      return;
+
+      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
+      return shipAppComponent.driveableToGoalDirection();
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-      return;
+
+      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
+      return shipAppComponent.driveableToGoalDirection();
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-      return;
+
+      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
+      return shipAppComponent.driveableToGoalDirection();
     }
 
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+    return shipAppComponent.driveableToGoalDirection();
   }
 
 

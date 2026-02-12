@@ -13,12 +13,13 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Getter
 @Setter
-@Component
+@Service
 public class ShipAppComponent {
 
   private final Map<String, ShipEntityState> shipEntityStateMap;
@@ -172,11 +173,8 @@ public class ShipAppComponent {
 
 
   /* aoto pilot*/
-  public void circumNavigate(ShipGoalDirection goalDirection) {
-    // navigate(shipId, "Backward", "Center")
-
-
-
+  public boolean driveableToGoalDirection(){
+    return shipGoalDirection.equals(shipDirection) && shipSector.getX() == 0;
   }
 
 
