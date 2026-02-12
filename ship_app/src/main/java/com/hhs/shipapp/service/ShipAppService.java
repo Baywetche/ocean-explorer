@@ -5,14 +5,13 @@ import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
+import com.hhs.shipapp.models.enums.Course;
+import com.hhs.shipapp.models.enums.Rudder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class ShipAppService {
@@ -24,8 +23,7 @@ public class ShipAppService {
 
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
 
-  public ShipAppService(ShipAppImpl shipAppImpl,
-                        ShipTransportMessage shipTransportMessage,
+  public ShipAppService(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
                         Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
@@ -296,10 +294,117 @@ public class ShipAppService {
     }
 
 
+    if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.NORTH.getKey()) {
+      navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey()); // 0,7
+      radar(shipId);
+      shipAppComponent.calcNavigableDirections();
+
+      boolean driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey());
+
+      if (driveable) {
+        navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+
+        radar(shipId);
+        shipAppComponent.calcNavigableDirections();
+
+        driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey());
+        if (!driveable) {
+          navigate(shipId, Course.Backward.getKey(), Rudder.Right.getKey());
+
+          radar(shipId);
+          shipAppComponent.calcNavigableDirections();
+
+          driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey());
+          if (driveable) {
+            navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+          }
+        }
+
+      }
+      else {
+        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+      }
+    }
+
+    else if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.SOUTH.getKey()) {
+
+    }
+    else if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.WEST.getKey()) {
+
+    }
+    else {
+      throw new IllegalStateException("Unexpected value: " + shipAppComponent.getShipGoalDirection());
+    }
+
+
+
+    /*
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey()); // 1,8
+      navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey()); // 1,9*/
+
+
     return result;
   }
 
+  void wallFollowLeft(String shipId) {
+    radar(shipId);
+    shipAppComponent.calcNavigableDirections();
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
+      return;
+    }
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+      return;
+    }
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+      return;
+    }
+
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+  }
+
+
+  void wallFollowRight(String shipId) {
+    radar(shipId);
+    shipAppComponent.calcNavigableDirections();
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+      return;
+    }
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+      return;
+    }
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
+      return;
+    }
+
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*

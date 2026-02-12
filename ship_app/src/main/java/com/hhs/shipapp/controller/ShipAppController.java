@@ -1,6 +1,7 @@
 package com.hhs.shipapp.controller;
 
 import com.hhs.lib.model.AutoPilotData;
+import com.hhs.lib.model.Sector;
 import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.service.ShipAppService;
@@ -69,13 +70,13 @@ public class ShipAppController {
       return ResponseEntity.ok(direction);
     } catch (IllegalArgumentException e) {
       log.info("Navigation failed for ship {}: {}", shipId, e.getMessage());
-      return ResponseEntity.ok(new Vec2D());
+      return ResponseEntity.ok(null);
     } catch (IllegalStateException e) {
       log.error("Navigation error for ship {}: {}", shipId, e.getMessage());
-      return ResponseEntity.ok(new Vec2D());
+      return ResponseEntity.ok(null);
     } catch (Exception e) {
       log.error("Unexpected navigation error for ship {}", shipId, e);
-      return ResponseEntity.ok(new Vec2D());
+      return ResponseEntity.ok(null);
     }
   }
 

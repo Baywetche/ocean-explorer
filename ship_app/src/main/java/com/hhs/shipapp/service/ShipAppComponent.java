@@ -39,7 +39,7 @@ public class ShipAppComponent {
 
   private RadarResponse radarResponse;
 
-  private Vec2D shipGoalDirection;
+  private Vec2D shipGoalDirection = ShipGoalDirection.NORTH.getKey();
 
   private Optional<Vec2D> shipBlockingSector;
 
@@ -170,8 +170,37 @@ public class ShipAppComponent {
   }
 
 
-
   /* aoto pilot*/
+  public void circumNavigate(ShipGoalDirection goalDirection) {
+    // navigate(shipId, "Backward", "Center")
+
+
+
+  }
+
+
+  public boolean driveableToDirection(String course, String rudder) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
+
+    String drive2 = course + "_" + rudder;
+
+    Vec2D direction = switch (drive2) {
+      case "Forward_Center" -> relativeCoordinateSystem.getCoordinates().get(0);
+      case "Forward_Right" -> relativeCoordinateSystem.getCoordinates().get(1);
+      case "Backward_Right" -> relativeCoordinateSystem.getCoordinates().get(3);
+      case "Backward_Center" -> relativeCoordinateSystem.getCoordinates().get(4);
+      case "Backward_Left" -> relativeCoordinateSystem.getCoordinates().get(5);
+      case "Forward_Left" -> relativeCoordinateSystem.getCoordinates().get(7);
+
+      default -> throw new IllegalStateException("Unexpected value: " + drive2);
+    };
+
+    // returns true, if direction not exist in navigableDirections
+    return !navigableDirections.contains(direction);
+  }
+
+  private void navigate(String shipId, String backward, String center) {}
+
   public void calcAllowedSurroundingSectors() {
     allowedShipSurroundingSectors = new ArrayList<>();
 
@@ -184,7 +213,7 @@ public class ShipAppComponent {
     log.info("allowedSurroundingFields: " + allowedShipSurroundingSectors);
   }
 
-  private void calcNavigableDirections() {
+  public void calcNavigableDirections() {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
 
     navigableDirections = new HashSet<>();

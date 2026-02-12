@@ -14,8 +14,6 @@ public class Vec2D {
   private int x;
   private int y;
 
-  private static final Vec2D[] NeighbourOffsets = {new Vec2D(-1,0),new Vec2D(-1,1),new Vec2D(0,1),new Vec2D(1,1),new Vec2D(1,0),new Vec2D(1,-1),new Vec2D(0,-1),new Vec2D(-1,-1) };
-
   public Vec2D() {
     // TODO Auto-generated constructor stub
   }
@@ -119,13 +117,6 @@ public class Vec2D {
 
   // Liefert ein Array aller 8 angrenzenden Koordinaten
   // es gibt keine Bereichspruefung
-  public Vec2D[] getNeighbours() {
-    Vec2D[] neighbours = new Vec2D[8];
-    for(int i=0; i<neighbours.length; i++) {
-      neighbours[i] = this.getSumVec(NeighbourOffsets[i]);
-    }
-    return neighbours;
-  }
 
   public static Vec2D fromJson(String json) throws JSONException {
     return fromJson(new JSONObject(json));
