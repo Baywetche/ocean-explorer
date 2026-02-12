@@ -1,8 +1,6 @@
 package com.hhs.shipapp.controller;
 
-import com.hhs.lib.model.AutoPilotData;
-import com.hhs.lib.model.Sector;
-import com.hhs.lib.model.Vec2D;
+import com.hhs.lib.model.*;
 import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.service.ShipAppService;
 import org.slf4j.Logger;
@@ -51,7 +49,7 @@ public class ShipAppController {
   }
 
   @GetMapping("/scan")
-  public ResponseEntity<Integer> scan(@RequestParam String shipId) {
+  public ResponseEntity<ScanResponse> scan(@RequestParam String shipId) {
     try {
       return ResponseEntity.ok(shipAppService.scan(shipId));
     } catch (IllegalArgumentException | IllegalStateException e) {
@@ -64,10 +62,10 @@ public class ShipAppController {
   }
 
   @GetMapping("/navigate")
-  public ResponseEntity<Vec2D> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
+  public ResponseEntity<NavigateResponse> navigate(@RequestParam String shipId, @RequestParam String course, @RequestParam String rudder) {
     try {
-      Vec2D direction = shipAppService.navigate(shipId, course, rudder);
-      return ResponseEntity.ok(direction);
+      NavigateResponse navigateResponse = shipAppService.navigate(shipId, course, rudder);
+      return ResponseEntity.ok(navigateResponse);
     } catch (IllegalArgumentException e) {
       log.info("Navigation failed for ship {}: {}", shipId, e.getMessage());
       return ResponseEntity.ok(null);

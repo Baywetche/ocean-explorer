@@ -163,6 +163,7 @@ public class ShipAppComponent {
   /* methods for ship Route */
   public void saveShipSector() {
     ShipSector shipSector = new ShipSector();
+    shipSector.setShipId(shipId);
     shipSector.setShipSectorX(this.shipSector.getX());
     shipSector.setShipSectorY(this.shipSector.getY());
 

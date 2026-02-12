@@ -1,10 +1,10 @@
 package com.hhs.lib.model;
 
+import java.util.Objects;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.Objects;
 
 //Hilfsklasse zur Beschreibung einer 2D-Koordinate bzw. eines 2D-Richtungsvektors
 //entsprechende JSON-Darstellung eines Vec2D-Objekts:
@@ -13,6 +13,8 @@ public class Vec2D {
 
   private int x;
   private int y;
+
+  private static final Vec2D[] NeighbourOffsets = {new Vec2D(-1,0),new Vec2D(-1,1),new Vec2D(0,1),new Vec2D(1,1),new Vec2D(1,0),new Vec2D(1,-1),new Vec2D(0,-1),new Vec2D(-1,-1) };
 
   public Vec2D() {
     // TODO Auto-generated constructor stub
@@ -107,8 +109,8 @@ public class Vec2D {
     return vec;
   }
   // Umwanldung in 3D-Vektor
-  public Vec3D asVec() {
-    return new Vec3D(x, y, 0);
+  public Vec asVec() {
+    return new Vec(x, y, 0);
   }
   // Richtung spiegeln
   public Vec2D invert() {
@@ -117,6 +119,13 @@ public class Vec2D {
 
   // Liefert ein Array aller 8 angrenzenden Koordinaten
   // es gibt keine Bereichspruefung
+  public Vec2D[] getNeighbours() {
+    Vec2D[] neighbours = new Vec2D[8];
+    for(int i=0; i<neighbours.length; i++) {
+      neighbours[i] = this.getSumVec(NeighbourOffsets[i]);
+    }
+    return neighbours;
+  }
 
   public static Vec2D fromJson(String json) throws JSONException {
     return fromJson(new JSONObject(json));

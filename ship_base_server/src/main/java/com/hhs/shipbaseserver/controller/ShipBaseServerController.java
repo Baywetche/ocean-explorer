@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/shipBaseServerAPI")
@@ -55,7 +56,7 @@ public class ShipBaseServerController {
    *
    * @return {@code true} if the sector exists, otherwise {@code false}
    */
-  @PostMapping(value = "/findSectorData") //TODO check, if works correctly
+  @GetMapping(value = "/findSectorData") //TODO check, if works correctly
   public ResponseEntity<SectorData> findSectorData(@RequestParam int sectorX, @RequestParam int sectorY) {
     System.out.println("findSectorData for: (" + sectorX + ", " + sectorY + ")");
 
@@ -135,8 +136,8 @@ public class ShipBaseServerController {
   }
 
   @GetMapping(value = "/getShipRoute")
-  public ResponseEntity<List<ShipSector>> getShipRoute(){
-    List<ShipSector> shipSector = shipRouteService.findShipRoute();
+  public ResponseEntity<Map<String, List<ShipSector>>> getShipRoute(){
+    Map<String, List<ShipSector>> shipSector = shipRouteService.findShipRoute();
 
     return ResponseEntity.ok(shipSector);
   }

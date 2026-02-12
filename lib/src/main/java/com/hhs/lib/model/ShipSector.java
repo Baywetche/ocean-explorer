@@ -13,6 +13,7 @@ public class ShipSector {
   @GeneratedValue()
   private Long id;
 
+  private String shipId;
   private int shipSectorX;
   private int shipSectorY;
 

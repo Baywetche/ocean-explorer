@@ -47,11 +47,11 @@ public class ShipAppService {
    */
   public String launchShip(String name, int x, int y, int dx, int dy) {
     if (x < 0 || x > 99 || y < 0 || y > 99) {
-      return "Sector liegt ausserhalb von Forschungsgebiet: " + "(" + x + ", " + y + ")";
+      return "Error";
     }
 
     if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
-      return "unerwartete Richtungseingabe: " + "(" + dx + ", " + dy + ")";
+      return "Error";
     }
 
     ensureConnectedToShipServer();
@@ -60,7 +60,7 @@ public class ShipAppService {
     Vec2D direction = new Vec2D(dx, dy);
 
     if (!shipTransportMessage.isSectorFree(sector)) {
-      return "Sector is not free: " + sector;
+      return "Error";
     }
 
     // Schiff landen
@@ -70,7 +70,7 @@ public class ShipAppService {
     String shipId = firstMessage.getId();
 
     if (firstMessage.getCmd() != Commands.launched) {
-      return "Ship launch failed: " + firstMessage.getCmd();
+      return "Error";
     }
 
     shipAppComponent.setShipId(shipId);
@@ -145,7 +145,7 @@ public class ShipAppService {
    * @throws IllegalArgumentException wenn das Schiff nicht existiert
    * @throws IllegalStateException    bei Verbindungsproblemen oder ungültiger Antwort
    */
-  public int scan(String shipId) {
+  public ScanResponse scan(String shipId) {
     ensureConnectedToShipServer();
 
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
@@ -169,7 +169,7 @@ public class ShipAppService {
     // Sector-Daten aktualisieren
     shipAppComponent.updateSectorData();
 
-    return scanMessage.getDepth();
+    return new ScanResponse(scanMessage.getDepth(), scanMessage.getStddev());
   }
 
   /**
@@ -182,7 +182,7 @@ public class ShipAppService {
    * @throws IllegalArgumentException bei ungültigem shipId oder fehlendem State
    * @throws IllegalStateException    bei Verbindungsproblemen
    */
-  public Vec2D navigate(String shipId, String course, String rudder) {
+  public NavigateResponse navigate(String shipId, String course, String rudder) {
     ensureConnectedToShipServer();
 
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
@@ -218,7 +218,7 @@ public class ShipAppService {
       // ShipSector in DB persistieren
       shipAppComponent.saveShipSector();
 
-      return shipAppComponent.getShipDirection();
+      return new NavigateResponse(shipAppComponent.getShipDirection().getX(), shipAppComponent.getShipDirection().getY());
     }
     else {
       // Bei Crash: Verbindung beenden
@@ -272,7 +272,7 @@ public class ShipAppService {
    * @throws IllegalArgumentException bei ungültigem Schiff oder fehlendem Zustand
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
-  public AutoPilotData runAutoPilot(String shipId) {
+  public AutoPilotData runAutoPilot(String shipId) throws InterruptedException {
     shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
 
     AutoPilotData result = new AutoPilotData();
@@ -289,58 +289,24 @@ public class ShipAppService {
       x = shipAppComponent.getShipSector().getX();
       y = shipAppComponent.getShipSector().getY();
 
+      Optional<Vec2D> shipBlockingSector = shipAppComponent.findShipBlockingSector();
+      if (shipBlockingSector.isPresent()){
+        Thread.sleep(2000);
+        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+        wallFollowRight(shipId);
+        int i = 0;
+        while (i < 7){
+          wallFollowLeft(shipId);
+          i++;
+        }
+      }
+
 
       navigate(shipId, "Forward", "Center");
-    }
 
-
-    if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.NORTH.getKey()) {
-      navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey()); // 0,7
-      radar(shipId);
-      shipAppComponent.calcNavigableDirections();
-
-      boolean driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey());
-
-      if (driveable) {
-        navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-
-        radar(shipId);
-        shipAppComponent.calcNavigableDirections();
-
-        driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey());
-        if (!driveable) {
-          navigate(shipId, Course.Backward.getKey(), Rudder.Right.getKey());
-
-          radar(shipId);
-          shipAppComponent.calcNavigableDirections();
-
-          driveable = shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey());
-          if (driveable) {
-            navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-          }
-        }
-
-      }
-      else {
-        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-      }
-    }
-
-    else if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.SOUTH.getKey()) {
 
     }
-    else if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.WEST.getKey()) {
-
-    }
-    else {
-      throw new IllegalStateException("Unexpected value: " + shipAppComponent.getShipGoalDirection());
-    }
-
-
-
-    /*
-      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey()); // 1,8
-      navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey()); // 1,9*/
 
 
     return result;
@@ -355,13 +321,13 @@ public class ShipAppService {
       return;
     }
 
-    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
-      navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
       return;
     }
 
-    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
-      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
       return;
     }
 
