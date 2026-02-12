@@ -274,104 +274,254 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public AutoPilotData runAutoPilot(String shipId) throws InterruptedException {
-    shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
-
     AutoPilotData result = new AutoPilotData();
 
-    int x = shipAppComponent.getShipSector().getX();
-    int y = shipAppComponent.getShipSector().getY();
+    shipAppComponent.setShipId(shipId);
+    shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
 
-    while (x < 99 && y < 99) {
-      RadarResponse radarResponse = radar(shipId);
-      shipAppComponent.setRadarResponse(radarResponse);
+    boolean reached = moveShipToWestSeaBoundary(shipId);
+    System.out.println("west sea boundary has been reached: " + reached);
 
-      scan(shipId);
-
-      x = shipAppComponent.getShipSector().getX();
-      y = shipAppComponent.getShipSector().getY();
-
-      Optional<Vec2D> shipBlockingSector = shipAppComponent.findShipBlockingSector();
-      if (shipBlockingSector.isPresent()) {
-        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-        Thread.sleep(2000);
-
-        wallFollowRight(shipId);
-
-        boolean driveableToGoalDirection = false;
-        while (!driveableToGoalDirection) {
-          Thread.sleep(2000);
-          driveableToGoalDirection = wallFollowLeft(shipId);
-
-          if (shipAppComponent.getShipSector().getX() == 0 && shipAppComponent.driveableToGoalDirection()) {
-            navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-            break;
-          }
-        }
-
-        continue;
-      }
-
-      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-    }
 
     return result;
   }
 
-  boolean wallFollowLeft(String shipId) {
-    radar(shipId);
+  private boolean moveShipToWestSeaBoundary(String shipId) {
+    Vec2D west = ShipGoalDirection.WEST.getKey();
+    shipAppComponent.setShipGoalDirection(west);
+
+    // Initialer Scan
+    scan(shipId);
+    RadarResponse radarResponse = radar(shipId);
+    shipAppComponent.setRadarResponse(radarResponse);
+
+//    shipAppComponent.driveableToDirection()
+
+    while (!isShipAtWestBoundary()) {
+      sleep1Second();
+
+      // === 1. Höchste Priorität: Direkt nach Westen fahren, wenn möglich ===
+      if (canDriveWest(shipId)) {
+        navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
+        continue;                    // ← sofort neuer Durchlauf (dein Wunsch)
+      }
+
+      // === 2. Wenn Westen blockiert ist ===
+      if (isShipBlocked()) {
+        handleShipCollision(shipId);
+        continue;
+      }
+
+      // === 3. Fallback: Wall-Following nur, wenn nötig (kein blindes WallFollow mehr) ===
+      followWallToOpenWestPath(shipId);
+
+      // Nach dem Wall-Follow nochmal versuchen, direkt nach Westen zu fahren
+      if (canDriveWest(shipId)) {
+        navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+      } else {
+        // Letzter Notfall: langsame Vorwärtsfahrt (kann angepasst werden)
+        navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+      }
+
+      continue;   // immer zurück zum Schleifenanfang
+    }
+
+    return true;
+  }
+
+  private boolean isShipAtWestBoundary() {
+    return shipAppComponent.getShipSector().getX() == 0;
+  }
+
+  private boolean isShipAtSouthBoundary() {
+    return shipAppComponent.getShipSector().getY() == 0;
+  }
+
+  private boolean isShipBlocked() {
+    return shipAppComponent.findShipBlockingSector().isPresent();
+  }
+
+  /** Prüft, ob das Schiff direkt nach Westen (Forward + Center) fahren kann */
+  private boolean canDriveWest(String shipId) {
+    return shipAppComponent.driveableToDirection(
+        Course.Forward.getKey(),
+        Rudder.Left.getKey()
+    );
+  }
+
+  /** Wall-Following nur in die Richtung, die den Weg nach Westen öffnet */
+  private void followWallToOpenWestPath(String shipId) {
+    if (isShipAtSouthBoundary()) {
+      wallFollowRight(shipId);   // unten → rechts entlang (um nach Westen zu kommen)
+    } else {
+      wallFollowLeft(shipId);    // oben → links entlang
+    }
+  }
+
+  /** Kollisionsbehandlung */
+  private void handleShipCollision(String shipId) {
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+    // Kurze Pause nach Rückwärts
+    sleep1Second();
+
+    // Wall-Follow in die richtige Richtung
+    followWallToOpenWestPath(shipId);
+
+    // Solange noch blockiert → weiter ausweichen
+    while (isShipBlocked()) {
+      sleep1Second();
+      navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+      if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
+        wallFollowLeft(shipId);
+      } else {
+        wallFollowRight(shipId);
+      }
+
+      // Früh abbrechen, falls West-Richtung plötzlich frei wird
+      if (canDriveWest(shipId)) {
+        break;
+      }
+    }
+  }
+
+
+  private void sleep1Second() {
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException ignore) {}
+  }
+
+  private boolean wallFollowLeft(String shipId) {
+    scan(shipId);
+    RadarResponse radarResponse = radar(shipId);
+    shipAppComponent.setRadarResponse(radarResponse);
+
     shipAppComponent.calcNavigableDirections();
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-
-      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
-      return shipAppComponent.driveableToGoalDirection();
-    }
-
-    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
-      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-
-      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
       return shipAppComponent.driveableToGoalDirection();
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-
-      System.out.println("driveableToGoalDirection: " + shipAppComponent.driveableToGoalDirection());
       return shipAppComponent.driveableToGoalDirection();
     }
+
+    if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
+      navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+      return shipAppComponent.driveableToGoalDirection();
+    }
+
 
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
     return shipAppComponent.driveableToGoalDirection();
   }
 
+  private boolean wallFollowRight(String shipId) {
+    scan(shipId);
+    RadarResponse radarResponse = radar(shipId);
+    shipAppComponent.setRadarResponse(radarResponse);
 
-  void wallFollowRight(String shipId) {
-    radar(shipId);
     shipAppComponent.calcNavigableDirections();
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-      return;
+      return shipAppComponent.driveableToGoalDirection();
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-      return;
+      return shipAppComponent.driveableToGoalDirection();
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-      return;
+      return shipAppComponent.driveableToGoalDirection();
+
     }
 
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+    return shipAppComponent.driveableToGoalDirection();
+
   }
+
 }
 
 
+/*
+      while (shipAppComponent.getNavigableDirections().contains(west)) {
+        boolean navigableToGoalDirection;
 
+        if (shipAppComponent.getShipSector().getY() != 99) {
+          navigableToGoalDirection = wallFollowRight(shipId);
+
+          int minimumStepsToShipGoalDirection = shipAppComponent.calculateMinimumStepsToGoalDirection(west);
+
+          if (minimumStepsToShipGoalDirection == 0) {
+            break;
+          }
+        }
+        else {
+          navigableToGoalDirection = wallFollowLeft(shipId);
+        }
+
+        if (navigableToGoalDirection) {
+          wallFollowLeft(shipId);
+          break;
+        }
+      }
+*/
+
+
+
+/*
+
+int x = shipAppComponent.getShipSector().getX();
+int y = shipAppComponent.getShipSector().getY();
+
+while (x != 99 && y != 0) {
+  RadarResponse radarResponse = radar(shipId);
+  shipAppComponent.setRadarResponse(radarResponse);
+
+  scan(shipId); //TODO IMMER aufrufen nach vor navigate-befehl
+
+  Optional<Vec2D> shipBlockingSector = shipAppComponent.findShipBlockingSector();
+
+  if (shipBlockingSector.isPresent()) {
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+    wallFollowRight(shipId);
+
+    boolean driveableToGoalDirection = false;
+    while (!driveableToGoalDirection) { //TODO optimiert werden
+      driveableToGoalDirection = wallFollowLeft(shipId);
+      Thread.sleep(2000);
+
+      if (shipAppComponent.getShipSector().getX() == 0 && shipAppComponent.driveableToGoalDirection()) {
+        navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+        break;
+      }
+    }
+
+    continue;
+  }
+
+  navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+
+
+
+
+
+
+
+  x = shipAppComponent.getShipSector().getX();
+  y = shipAppComponent.getShipSector().getY();
+}
+
+    */
 
 
 

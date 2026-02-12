@@ -177,6 +177,11 @@ public class ShipAppComponent {
     return shipGoalDirection.equals(shipDirection) && shipSector.getX() == 0;
   }
 
+  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
+    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
+  }
+
 
   public boolean driveableToDirection(String course, String rudder) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
@@ -194,8 +199,7 @@ public class ShipAppComponent {
       default -> throw new IllegalStateException("Unexpected value: " + drive2);
     };
 
-    // returns true, if direction not exist in navigableDirections
-    return !navigableDirections.contains(direction);
+    return navigableDirections.contains(direction);
   }
 
   private void navigate(String shipId, String backward, String center) {}
