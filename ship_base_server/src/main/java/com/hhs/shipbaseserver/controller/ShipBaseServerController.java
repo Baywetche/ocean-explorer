@@ -68,7 +68,7 @@ public class ShipBaseServerController {
    *
    * @return a list of all {@link SectorData} objects
    */
-  @GetMapping(value = "/allSectorData") //TODO check, if works correctly
+  @GetMapping(value = "/allSectorInfo") //TODO check, if works correctly
   public List<SectorData> findAllSectorData() {
     return sectorDataService.getAllSectorData();
   }
