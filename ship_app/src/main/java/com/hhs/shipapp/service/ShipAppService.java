@@ -7,6 +7,7 @@ import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
 import com.hhs.shipapp.models.enums.Course;
 import com.hhs.shipapp.models.enums.Rudder;
+import com.hhs.shipapp.util.Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -297,16 +298,15 @@ public class ShipAppService {
     shipAppComponent.setRadarResponse(radarResponse);
 
     while (!shipAppComponent.isShipAtWestBoundary()) {
-      sleep1Second();
+      Helper.sleepMillis(1000);
 
-      if (shipAppComponent.canDriveShipGoalDirection()) {
+      if(shipAppComponent.canDriveShipGoalDirection()) {
+        if (shipAppComponent.isShipBlocked()) {
+          handleShipCollision(shipId);
+          continue;
+        }
+
         navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-        continue;
-      }
-
-      if (shipAppComponent.isShipBlocked()) {
-        handleShipCollision(shipId);
-        continue;
       }
 
       startFollowWall(shipId);
@@ -317,50 +317,46 @@ public class ShipAppService {
       else {
         wallFollowLeft(shipId);
       }
+
+      System.out.println("execution in first while loop");
     }
 
     return true;
   }
 
   private void startFollowWall(String shipId) {
-    if (shipAppComponent.isShipAtSouthBoundary()) {
-      wallFollowRight(shipId);
+    if (!shipAppComponent.isShipAtSouthBoundary()) {
+      wallFollowLeft(shipId);
     }
     else {
-      wallFollowLeft(shipId);
+      wallFollowRight(shipId);
     }
   }
 
   private void handleShipCollision(String shipId) {
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
-    sleep1Second();
+    Helper.sleepMillis(1000);
 
     startFollowWall(shipId);
 
     while (shipAppComponent.isShipBlocked()) {
-      sleep1Second();
+      Helper.sleepMillis(1000);
       navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
-      if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
-        wallFollowLeft(shipId);
-      }
-      else {
-        wallFollowRight(shipId);
-      }
+      startFollowWall(shipId);
 
-      // Früh abbrechen, falls ShipGoal-Richtung plötzlich frei wird
       if (shipAppComponent.canDriveShipGoalDirection()) {
         break;
       }
+
     }
+
+    System.out.println("handleShipCollision leaved ");
   }
 
-  private void sleep1Second() {
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException ignore) {}
-  }
+
+
 
   private boolean wallFollowLeft(String shipId) {
     scan(shipId);
@@ -416,123 +412,8 @@ public class ShipAppService {
     return shipAppComponent.driveableToGoalDirection();
 
   }
-
 }
 
 
-/*
-      while (shipAppComponent.getNavigableDirections().contains(west)) {
-        boolean navigableToGoalDirection;
-
-        if (shipAppComponent.getShipSector().getY() != 99) {
-          navigableToGoalDirection = wallFollowRight(shipId);
-
-          int minimumStepsToShipGoalDirection = shipAppComponent.calculateMinimumStepsToGoalDirection(west);
-
-          if (minimumStepsToShipGoalDirection == 0) {
-            break;
-          }
-        }
-        else {
-          navigableToGoalDirection = wallFollowLeft(shipId);
-        }
-
-        if (navigableToGoalDirection) {
-          wallFollowLeft(shipId);
-          break;
-        }
-      }
-*/
 
 
-
-/*
-
-int x = shipAppComponent.getShipSector().getX();
-int y = shipAppComponent.getShipSector().getY();
-
-while (x != 99 && y != 0) {
-  RadarResponse radarResponse = radar(shipId);
-  shipAppComponent.setRadarResponse(radarResponse);
-
-  scan(shipId); //TODO IMMER aufrufen nach vor navigate-befehl
-
-  Optional<Vec2D> shipBlockingSector = shipAppComponent.findShipBlockingSector();
-
-  if (shipBlockingSector.isPresent()) {
-    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-
-    wallFollowRight(shipId);
-
-    boolean driveableToGoalDirection = false;
-    while (!driveableToGoalDirection) { //TODO optimiert werden
-      driveableToGoalDirection = wallFollowLeft(shipId);
-      Thread.sleep(2000);
-
-      if (shipAppComponent.getShipSector().getX() == 0 && shipAppComponent.driveableToGoalDirection()) {
-        navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-        break;
-      }
-    }
-
-    continue;
-  }
-
-  navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-
-
-
-
-
-
-
-  x = shipAppComponent.getShipSector().getX();
-  y = shipAppComponent.getShipSector().getY();
-}
-
-    */
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-      if (x == 50 && y == 98){
-        navigate(shipId, "Forward", "Right");
-      }
-      else if (x == 51 && y == 99){
-        navigate(shipId, "Backward", "Left");
-      }
-      else if (x == 50 && y == 99){
-        navigate(shipId, "Forward", "Right");
-      }
-      else if (x == 50 && y == 98){
-        navigate(shipId, "Forward", "Right");
-      }
-
-
-      if (x == 51 && y == 1){
-        navigate(shipId, "Forward", "Left");
-      }
-      if (x == 52 && y == 0){
-        navigate(shipId, "Backward", "Right");
-      }
-      if (x == 51 && y == 0){
-        navigate(shipId, "Backward", "Right");
-      }
-
-      if (x == 52 && y == 1){
-        navigate(shipId, "Forward", "Left");
-      }
-
-
-      */

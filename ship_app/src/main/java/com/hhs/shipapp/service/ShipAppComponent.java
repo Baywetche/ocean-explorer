@@ -197,7 +197,7 @@ public class ShipAppComponent {
 
   public boolean canDriveShipGoalDirection(){
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-    System.out.println("canDriveShipGoalDirection: " + (relativeCoordinateSystem.getCoordinates().getFirst().equals(shipGoalDirection)));
+
     return relativeCoordinateSystem.getCoordinates().getFirst().equals(shipGoalDirection);
   }
 
