@@ -286,106 +286,75 @@ public class ShipAppService {
     return result;
   }
 
+
   private boolean moveShipToWestSeaBoundary(String shipId) {
     Vec2D west = ShipGoalDirection.WEST.getKey();
     shipAppComponent.setShipGoalDirection(west);
 
-    // Initialer Scan
     scan(shipId);
+
     RadarResponse radarResponse = radar(shipId);
     shipAppComponent.setRadarResponse(radarResponse);
 
-//    shipAppComponent.driveableToDirection()
-
-    while (!isShipAtWestBoundary()) {
+    while (!shipAppComponent.isShipAtWestBoundary()) {
       sleep1Second();
 
-      // === 1. Höchste Priorität: Direkt nach Westen fahren, wenn möglich ===
-      if (canDriveWest(shipId)) {
-        navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-        continue;                    // ← sofort neuer Durchlauf (dein Wunsch)
+      if (shipAppComponent.canDriveShipGoalDirection()) {
+        navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+        continue;
       }
 
-      // === 2. Wenn Westen blockiert ist ===
-      if (isShipBlocked()) {
+      if (shipAppComponent.isShipBlocked()) {
         handleShipCollision(shipId);
         continue;
       }
 
-      // === 3. Fallback: Wall-Following nur, wenn nötig (kein blindes WallFollow mehr) ===
-      followWallToOpenWestPath(shipId);
+      startFollowWall(shipId);
 
-      // Nach dem Wall-Follow nochmal versuchen, direkt nach Westen zu fahren
-      if (canDriveWest(shipId)) {
-        navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-      } else {
-        // Letzter Notfall: langsame Vorwärtsfahrt (kann angepasst werden)
+      if (shipAppComponent.canDriveShipGoalDirection()) {
         navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
       }
-
-      continue;   // immer zurück zum Schleifenanfang
+      else {
+        wallFollowLeft(shipId);
+      }
     }
 
     return true;
   }
 
-  private boolean isShipAtWestBoundary() {
-    return shipAppComponent.getShipSector().getX() == 0;
-  }
-
-  private boolean isShipAtSouthBoundary() {
-    return shipAppComponent.getShipSector().getY() == 0;
-  }
-
-  private boolean isShipBlocked() {
-    return shipAppComponent.findShipBlockingSector().isPresent();
-  }
-
-  /** Prüft, ob das Schiff direkt nach Westen (Forward + Center) fahren kann */
-  private boolean canDriveWest(String shipId) {
-    return shipAppComponent.driveableToDirection(
-        Course.Forward.getKey(),
-        Rudder.Left.getKey()
-    );
-  }
-
-  /** Wall-Following nur in die Richtung, die den Weg nach Westen öffnet */
-  private void followWallToOpenWestPath(String shipId) {
-    if (isShipAtSouthBoundary()) {
-      wallFollowRight(shipId);   // unten → rechts entlang (um nach Westen zu kommen)
-    } else {
-      wallFollowLeft(shipId);    // oben → links entlang
+  private void startFollowWall(String shipId) {
+    if (shipAppComponent.isShipAtSouthBoundary()) {
+      wallFollowRight(shipId);
+    }
+    else {
+      wallFollowLeft(shipId);
     }
   }
 
-  /** Kollisionsbehandlung */
   private void handleShipCollision(String shipId) {
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
-    // Kurze Pause nach Rückwärts
     sleep1Second();
 
-    // Wall-Follow in die richtige Richtung
-    followWallToOpenWestPath(shipId);
+    startFollowWall(shipId);
 
-    // Solange noch blockiert → weiter ausweichen
-    while (isShipBlocked()) {
+    while (shipAppComponent.isShipBlocked()) {
       sleep1Second();
       navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
       if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
         wallFollowLeft(shipId);
-      } else {
+      }
+      else {
         wallFollowRight(shipId);
       }
 
-      // Früh abbrechen, falls West-Richtung plötzlich frei wird
-      if (canDriveWest(shipId)) {
+      // Früh abbrechen, falls ShipGoal-Richtung plötzlich frei wird
+      if (shipAppComponent.canDriveShipGoalDirection()) {
         break;
       }
     }
   }
-
 
   private void sleep1Second() {
     try {

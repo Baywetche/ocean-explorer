@@ -1,5 +1,7 @@
 package com.hhs.shipapp.util;
 
+import com.hhs.lib.model.DriveCommands;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,6 +14,14 @@ public class Helper {
       return matcher.group(1);
     }
     return null;
+  }
+
+  public static String extractCourseFromDriveCommands(DriveCommands driveCommands) {
+    return driveCommands.toString().split("_")[0];
+  }
+
+  public static String extractRudderFromDriveCommands(DriveCommands driveCommands) {
+    return driveCommands.toString().split("_")[1];
   }
 
 }

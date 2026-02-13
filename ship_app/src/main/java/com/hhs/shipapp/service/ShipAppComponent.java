@@ -12,7 +12,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -172,14 +171,61 @@ public class ShipAppComponent {
   }
 
 
-  /* aoto pilot*/
-  public boolean driveableToGoalDirection(){
-    return shipGoalDirection.equals(shipDirection) && shipSector.getX() == 0;
+
+
+
+
+
+
+
+
+  //   autopilot
+  public DriveCommands computeDriveCommandsToShipGoalDirection() {
+    if (shipDirection.equals(shipGoalDirection)) {
+      return DriveCommands.Forward_Center;
+    }
+
+    boolean isOppositeDirection =
+        shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == shipGoalDirection.getY();
+
+    if (isOppositeDirection) {
+      return DriveCommands.Backward_Center;
+    }
+
+    return null;
   }
 
-  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
+  public boolean canDriveShipGoalDirection(){
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
+    System.out.println("canDriveShipGoalDirection: " + (relativeCoordinateSystem.getCoordinates().getFirst().equals(shipGoalDirection)));
+    return relativeCoordinateSystem.getCoordinates().getFirst().equals(shipGoalDirection);
+  }
+
+  public boolean isShipBlocked() {
+    System.out.println("isShipBlocked: " + findShipBlockingSector().isPresent());
+    return findShipBlockingSector().isPresent();
+  }
+
+  private Optional<Vec2D> findShipBlockingSector() {
+    Vec2D nextSector = new Vec2D(shipSector.getX() + shipDirection.getX(), shipSector.getY() + shipDirection.getY());
+
+    shipBlockingSector = radarResponse.getEchos().stream().filter(
+                                          echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water).map(Echo::getSector)
+                                      .map(Sector::getVec2)
+                                      .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
+                                      .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
+
+    if (shipBlockingSector.isPresent()) {
+      System.out.println("findShipBlockingSector: " + shipBlockingSector);
+    }
+
+    return shipBlockingSector;
+  }
+
+  public boolean driveableToGoalDirection() {
+    System.out.println("shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0 : " + (shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0));
+
+    return shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0;
   }
 
 
@@ -200,6 +246,23 @@ public class ShipAppComponent {
     };
 
     return navigableDirections.contains(direction);
+  }
+
+  public boolean isShipAtSouthBoundary() {
+    return shipSector.getY() == 0;
+  }
+
+  public boolean isShipAtWestBoundary() {
+    return shipSector.getX() == 0;
+  }
+
+
+
+
+  //
+  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
+    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
   }
 
   private void navigate(String shipId, String backward, String center) {}
@@ -233,23 +296,6 @@ public class ShipAppComponent {
         navigableDirections.add(dir);
       }
     }
-  }
-
-
-  public Optional<Vec2D> findShipBlockingSector() {
-    Vec2D nextSector = new Vec2D(shipSector.getX() + shipDirection.getX(), shipSector.getY() + shipDirection.getY());
-
-    shipBlockingSector = radarResponse.getEchos().stream().filter(
-                                          echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water).map(Echo::getSector)
-                                      .map(Sector::getVec2)
-                                      .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
-                                      .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
-
-    if (shipBlockingSector.isPresent()) {
-      calcNewGoalShipSectorAfterBlocking();
-    }
-
-    return shipBlockingSector;
   }
 
   private void calcNewGoalShipSectorAfterBlocking() {
