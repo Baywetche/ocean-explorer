@@ -171,38 +171,13 @@ public class ShipAppComponent {
   }
 
 
-
-
-
-
-
-
-
-
   //   autopilot
-  public DriveCommands computeDriveCommandsToShipGoalDirection() {
-    if (shipDirection.equals(shipGoalDirection)) {
-      return DriveCommands.Forward_Center;
-    }
 
-    boolean isOppositeDirection =
-        shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == shipGoalDirection.getY();
-
-    if (isOppositeDirection) {
-      return DriveCommands.Backward_Center;
-    }
-
-    return null;
-  }
-
-  public boolean canDriveShipGoalDirection(){
-    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-
-    return relativeCoordinateSystem.getCoordinates().getFirst().equals(shipGoalDirection);
+  public boolean driveableToShipGoalDirection() {
+    return shipDirection.equals(shipGoalDirection);
   }
 
   public boolean isShipBlocked() {
-    System.out.println("isShipBlocked: " + findShipBlockingSector().isPresent());
     return findShipBlockingSector().isPresent();
   }
 
@@ -211,23 +186,14 @@ public class ShipAppComponent {
 
     shipBlockingSector = radarResponse.getEchos().stream().filter(
                                           echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water).map(Echo::getSector)
-                                      .map(Sector::getVec2)
-                                      .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
+                                      .map(Sector::getVec2).filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
                                       .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
 
     if (shipBlockingSector.isPresent()) {
-      System.out.println("findShipBlockingSector: " + shipBlockingSector);
+      System.out.println("ShipBlockingSector: " + shipBlockingSector.get());
     }
-
     return shipBlockingSector;
   }
-
-  public boolean driveableToGoalDirection() {
-    System.out.println("shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0 : " + (shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0));
-
-    return shipGoalDirection.equals(shipDirection) && shipSector.getX() != 0;
-  }
-
 
   public boolean driveableToDirection(String course, String rudder) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
@@ -256,30 +222,7 @@ public class ShipAppComponent {
     return shipSector.getX() == 0;
   }
 
-
-
-
-  //
-  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
-    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
-  }
-
-  private void navigate(String shipId, String backward, String center) {}
-
-  public void calcAllowedSurroundingSectors() {
-    allowedShipSurroundingSectors = new ArrayList<>();
-
-    calcNavigableDirections();
-
-    for (Vec2D vec2D : navigableDirections) {
-      allowedShipSurroundingSectors.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
-    }
-
-    log.info("allowedSurroundingFields: " + allowedShipSurroundingSectors);
-  }
-
-  public void calcNavigableDirections() {
+  public void calculateNavigableDirections() {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
 
     navigableDirections = new HashSet<>();
@@ -296,6 +239,59 @@ public class ShipAppComponent {
         navigableDirections.add(dir);
       }
     }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //
+  public DriveCommands computeDriveCommandsToShipGoalDirection() {
+    if (shipDirection.equals(shipGoalDirection)) {
+      return DriveCommands.Forward_Center;
+    }
+
+    boolean isOppositeDirection =
+        shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == shipGoalDirection.getY();
+
+    if (isOppositeDirection) {
+      return DriveCommands.Backward_Center;
+    }
+
+    return null;
+  }
+
+  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
+    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
+    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
+  }
+
+  private void navigate(String shipId, String backward, String center) {}
+
+  public void calcAllowedSurroundingSectors() {
+    allowedShipSurroundingSectors = new ArrayList<>();
+
+    calculateNavigableDirections();
+
+    for (Vec2D vec2D : navigableDirections) {
+      allowedShipSurroundingSectors.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
+    }
+
+    log.info("allowedSurroundingFields: " + allowedShipSurroundingSectors);
   }
 
   private void calcNewGoalShipSectorAfterBlocking() {
@@ -315,7 +311,7 @@ public class ShipAppComponent {
 
   }
 
-  public void calcRouteTree(List<Sector> notNavigable) {
+ /* public void calcRouteTree(List<Sector> notNavigable) {
     for (Vec2D vec2D : navigableDirections) {
       allowedShipSurroundingSectors.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
     }
@@ -339,7 +335,7 @@ public class ShipAppComponent {
     }
 
     node.getRouteList().addAll(routePoints);
-  }
+  }*/
 
 
 }
