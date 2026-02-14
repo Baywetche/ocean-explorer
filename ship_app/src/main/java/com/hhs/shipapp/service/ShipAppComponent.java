@@ -39,7 +39,8 @@ public class ShipAppComponent {
 
   private RadarResponse radarResponse;
 
-  private Vec2D shipGoalDirection = ShipGoalDirection.NORTH.getKey();
+  private Vec2D shipGoalDirection;
+  private ShipStraightOnDirection driveableToShipGoalDirection;
 
   private Optional<Vec2D> shipBlockingSector;
 
@@ -141,8 +142,6 @@ public class ShipAppComponent {
     state.setCourse(parsedCourse);
     state.setRudder(parsedRudder);
 
-    log.info("ShipEntityState updated to: " + state);
-
     state.recordMove(state.getSector(), parsedCourse, parsedRudder);
   }
 
@@ -162,7 +161,7 @@ public class ShipAppComponent {
     shipEntityStateMap.remove(shipId);
   }
 
-  /* methods for ship Route */
+  // ===== ship Route =====
   public boolean saveShipSector() {
     ShipSector shipSector = new ShipSector();
     shipSector.setShipId(shipId);
@@ -172,10 +171,15 @@ public class ShipAppComponent {
     return shipTransportMessage.saveShipSector(shipSector);
   }
 
-  //   autopilot
+  // ===== Autopilot =====
+  public void driveableToShipGoalDirection() {
+    if (shipDirection.equals(shipGoalDirection)) {
+      driveableToShipGoalDirection = ShipStraightOnDirection.Forward;
+    }
 
-  public boolean driveableToShipGoalDirection() {
-    return shipDirection.equals(shipGoalDirection);
+    if (shipGoalDirection.getX() == -1 * shipDirection.getX() && shipGoalDirection.getY() == -1 * shipDirection.getY()) {
+      driveableToShipGoalDirection = ShipStraightOnDirection.Backward;
+    }
   }
 
   public boolean isShipBlocked() {
@@ -243,6 +247,25 @@ public class ShipAppComponent {
     }
   }
 
+  public boolean isShipFacingWest(){
+    Vec2D shipGoalDirection = ShipGoalDirection.WEST.getKey();
+
+    return shipGoalDirection.getX() == shipDirection.getX() && shipGoalDirection.getY() == shipDirection.getY();
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   //
@@ -296,32 +319,4 @@ public class ShipAppComponent {
     notNavigableDirections.add(new Sector(relCoord.getCoordinates().get(6))); // west
 
   }
-
- /* public void calcRouteTree(List<Sector> notNavigable) {
-    for (Vec2D vec2D : navigableDirections) {
-      allowedShipSurroundingSectors.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
-    }
-
-    for (int i = 0; i < allowedShipSurroundingSectors.size(); i++) {
-      Route route = new Route();
-      Vec2D v = allowedShipSurroundingSectors.get(i);
-      addRoute(route, List.of("01", "12", "23"), List.of(new Vec2D(v.getX(), v.getY()), new Vec2D(v.getX(), v.getY())));
-    }
-
-  }
-
-  public void addRoute(Route route, List<String> path, List<Vec2D> routePoints) {
-
-    Map<String, RouteNode> map = route.getRoute();
-    RouteNode node = null;
-
-    for (String key : path) {
-      node = map.computeIfAbsent(key, k -> new RouteNode());
-      map = node.getChildren();
-    }
-
-    node.getRouteList().addAll(routePoints);
-  }*/
-
-
 }

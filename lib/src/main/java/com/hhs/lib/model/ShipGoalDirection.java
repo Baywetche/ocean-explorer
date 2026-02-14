@@ -15,4 +15,14 @@ public enum ShipGoalDirection {
     this.key = key;
   }
 
+  public static ShipGoalDirection fromVec2D(Vec2D vec2D) {
+    String vec2DString = "(" + vec2D.getX() + ", " + vec2D.getY() + ")";
+    return switch (vec2DString) {
+      case "(0, 1)" -> NORTH;
+      case "(0, -1)" -> SOUTH;
+      case "(-1, 0)" -> WEST;
+      default -> null;
+    };
+  }
+
 }
