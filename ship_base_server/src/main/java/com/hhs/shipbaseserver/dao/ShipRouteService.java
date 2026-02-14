@@ -14,61 +14,36 @@ public class ShipRouteService {
 
   public ShipRouteService(ShipRouteRepository shipRouteRepository) {this.shipRouteRepository = shipRouteRepository;}
 
-  public ResponseEntity<Boolean> save(ShipSector shipSector) {
+  public boolean save(ShipSector shipSector) {
     if (isSectorExists(shipSector.getShipSectorX(), shipSector.getShipSectorY())) {
-      return ResponseEntity.ok(false);
+      return false;
     }
 
     shipRouteRepository.save(shipSector);
 
-    return ResponseEntity.ok(true);
-
+    return true;
   }
 
   private boolean isSectorExists(int sectorX, int sectorY) {
     return !shipRouteRepository.findByShipSectorXAndShipSectorY(sectorX, sectorY).isEmpty();
   }
 
-  public ResponseEntity<Boolean> deleteAllShipRouteFromDB() {
+  public boolean deleteAllShipRouteFromDB() {
 
     shipRouteRepository.deleteAll();
 
-    return ResponseEntity.ok(true);
+    return true;
   }
 
-  public ResponseEntity<Boolean> deleteShipSectorBySectorXAndSectorY(ShipSector shipSector) {
+  public boolean deleteShipSectorBySectorXAndSectorY(ShipSector shipSector) {
     if (isSectorExists(shipSector.getShipSectorX(), shipSector.getShipSectorY())) {
-      return ResponseEntity.ok(false);
+      return false;
     }
 
     shipRouteRepository.deleteByShipSectorXAndShipSectorY(shipSector.getShipSectorX(), shipSector.getShipSectorY());
 
-    return ResponseEntity.ok(true);
+    return true;
   }
-
- /* public Map<String, List<ShipSector>> findShipRoute() {
-    Map<String, List<ShipSector>> shipSectorMap = new HashMap<>();
-    Set<String> shipIdSet = new HashSet<>();
-
-    List<ShipSector> allShipSectorList = new ArrayList<>(shipRouteRepository.findAll());
-
-    for (ShipSector shipSector : allShipSectorList){
-      shipIdSet.add(shipSector.getShipId());
-    }
-
-    for (String shipId : shipIdSet){
-      List<ShipSector> shipSectorList4ShipId = new ArrayList<>();
-      for (ShipSector shipSector : allShipSectorList){
-        if (shipSector.getShipId().equals(shipId)){
-          shipSectorList4ShipId.add(shipSector);
-        }
-      }
-
-      shipSectorMap.put(shipId, shipSectorList4ShipId);
-    }
-
-    return shipSectorMap;
-  }*/
 
   public Map<String, List<ShipSector>> findShipRoute() {
 

@@ -130,9 +130,7 @@ public class ShipBaseServerController {
 
   @PostMapping(value = "/saveShipSector")
   public ResponseEntity<Boolean> saveShipSector(@RequestBody ShipSector shipSector){
-    shipRouteService.save(shipSector);
-
-    return ResponseEntity.ok(true);
+    return ResponseEntity.ok(shipRouteService.save(shipSector));
   }
 
   @GetMapping(value = "/getShipRoute")

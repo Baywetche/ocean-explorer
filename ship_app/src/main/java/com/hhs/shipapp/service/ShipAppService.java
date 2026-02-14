@@ -319,9 +319,18 @@ public class ShipAppService {
     return shipAppComponent.driveableToShipGoalDirection() && shipAppComponent.getShipSector().getX() != 0;
   }
 
+
   private void startFollowWall(String shipId) {
-    System.out.println("start follow wall");
     if (!shipAppComponent.isShipAtSouthBoundary()) {
+      shipAppComponent.getLast8ShipSectors().forEach(sector -> {
+        System.out.println("last8ShipSectors: " + sector);
+      });
+
+      if (shipAppComponent.getIsShipMakingCircularMovementMap().get(shipId)) {
+        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+      }
+
       wallFollowLeft(shipId);
     }
     else {
@@ -373,8 +382,10 @@ public class ShipAppService {
       return shipAppComponent.driveableToShipGoalDirection();
     }
 
-    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
-      // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward + Center nicht erneut gewählt werden
+    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(),
+                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+      // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward +
+      // Center nicht erneut gewählt werden
       forwardCenterBlocked.put(shipId, true);
 
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
@@ -407,8 +418,10 @@ public class ShipAppService {
       return shipAppComponent.driveableToShipGoalDirection();
     }
 
-    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
-      // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward + Center nicht erneut gewählt werden
+    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(),
+                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+      // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward +
+      // Center nicht erneut gewählt werden
       forwardCenterBlocked.put(shipId, true);
 
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
