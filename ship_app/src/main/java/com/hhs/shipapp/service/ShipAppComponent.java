@@ -45,9 +45,8 @@ public class ShipAppComponent {
 
   private final Logger log = LoggerFactory.getLogger(ShipAppComponent.class);
 
-  private final Set<Vec2D> last8ShipSectors = new HashSet<>();
-
   private final Map<String, Boolean> isShipMakingCircularMovementMap = new HashMap<>();
+
 
   public ShipAppComponent(ShipTransportMessage shipTransportMessage, Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipTransportMessage = shipTransportMessage;
@@ -170,30 +169,8 @@ public class ShipAppComponent {
     shipSector.setShipSectorX(this.shipSector.getX());
     shipSector.setShipSectorY(this.shipSector.getY());
 
-    boolean isShipMakingCircularMovement = isShipMakingCircularMovement(new Vec2D(this.shipSector.getX(), this.shipSector.getY()));
-    if (isShipMakingCircularMovement) {
-      isShipMakingCircularMovementMap.put(shipId, true);
-    }
-
     return shipTransportMessage.saveShipSector(shipSector);
   }
-
-  private boolean isShipMakingCircularMovement(Vec2D shipSector) {
-    while (last8ShipSectors.size() >= 9) {
-      Vec2D first = null;
-      for (Vec2D v : last8ShipSectors) {
-        first = v;
-        break;
-      }
-
-      last8ShipSectors.remove(first);
-    }
-
-    // shipSector kann hinzugefügt werdenn -> kein Doppelgänger -> kein Kreisbewegung -> muss ein false zurückgeben
-    return !last8ShipSectors.add(shipSector);
-
-  }
-
 
   //   autopilot
 
@@ -266,36 +243,6 @@ public class ShipAppComponent {
     }
   }
 
-/*  public boolean isShipMakingCircularMovement(String shipId) {
-    List<ShipSector> dbLast8ShipSectors = getLast8ShipSectorsFromDB(shipId);
-
-    if (last8ShipSectors.size() != dbLast8ShipSectors.size()) {
-      return false;
-    }
-
-    for (int i = 0; i < dbLast8ShipSectors.size(); i++) {
-      Vec2D localSector = last8ShipSectors.get(i);
-      ShipSector dbSector = dbLast8ShipSectors.get(i);
-
-      if (localSector.getX() != dbSector.getShipSectorX() || localSector.getY() != dbSector.getShipSectorY()) {
-        return false;
-      }
-    }
-
-    return true;
-  }*/
-
-
-  private List<ShipSector> getLast8ShipSectorsFromDB(String shipId) {
-    Map<String, List<ShipSector>> shipRouteMap = shipTransportMessage.getShipRoute();
-    List<ShipSector> shipSectors = shipRouteMap.get(shipId);
-
-    int fromIndex = Math.max(shipSectors.size() - 8, 0);
-
-    List<ShipSector> lastEightSectors = shipSectors.subList(fromIndex, shipSectors.size());
-
-    return lastEightSectors;
-  }
 
 
   //

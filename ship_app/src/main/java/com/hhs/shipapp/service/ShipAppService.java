@@ -22,7 +22,10 @@ public class ShipAppService {
   private final ShipAppComponent shipAppComponent;
   private final Set<String> checkedShipIds = new HashSet<>();
 
+  private final int delayMillis = 500;
+  private WallFollowMode wallFollowMode;
   private final Map<String, Boolean> forwardCenterBlocked = new HashMap<>();
+  private final Map<String, Integer> stepStateCounter = new HashMap<>();
 
 
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
@@ -296,13 +299,25 @@ public class ShipAppService {
     refreshScanAndRadar(shipId);
 
     while (!shipAppComponent.isShipAtWestBoundary()) {
+
       if (driveableToWestSeaBoundary()) {
         refreshScanAndRadar(shipId);
 
         if (shipAppComponent.isShipBlocked()) {
-          Helper.sleepMillis(1000);
           handleShipCollision(shipId);
           continue;
+        }
+
+        boolean foundCirculation = isLoopDetected(shipId);
+        if (foundCirculation) {
+          if (shipAppComponent.driveableToDirection(Course.Backward.getKey(), Rudder.Right.getKey())) {
+            Helper.sleepForMillis(delayMillis);
+            navigate(shipId, Course.Backward.getKey(), Rudder.Right.getKey());
+          }
+          if (shipAppComponent.driveableToDirection(Course.Backward.getKey(), Rudder.Left.getKey())) {
+            Helper.sleepForMillis(delayMillis);
+            navigate(shipId, Course.Backward.getKey(), Rudder.Left.getKey());
+          }
         }
 
         navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
@@ -319,28 +334,20 @@ public class ShipAppService {
     return shipAppComponent.driveableToShipGoalDirection() && shipAppComponent.getShipSector().getX() != 0;
   }
 
-
   private void startFollowWall(String shipId) {
     if (!shipAppComponent.isShipAtSouthBoundary()) {
-      shipAppComponent.getLast8ShipSectors().forEach(sector -> {
-        System.out.println("last8ShipSectors: " + sector);
-      });
-
-      if (shipAppComponent.getIsShipMakingCircularMovementMap().get(shipId)) {
-        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-        navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-      }
-
+      wallFollowMode = WallFollowMode.LEFT;
       wallFollowLeft(shipId);
     }
     else {
+      wallFollowMode = WallFollowMode.RIGHT;
       wallFollowRight(shipId);
     }
   }
 
   private void handleShipCollision(String shipId) {
     System.out.println("Ship blocked and will be handled by ship collision");
-
+    Helper.sleepForMillis(delayMillis);
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
     startFollowWall(shipId);
@@ -348,7 +355,7 @@ public class ShipAppService {
     refreshScanAndRadar(shipId);
 
     while (shipAppComponent.isShipBlocked()) {
-      Helper.sleepMillis(1000);
+      Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
 
       startFollowWall(shipId);
@@ -360,6 +367,21 @@ public class ShipAppService {
     }
   }
 
+  private boolean isLoopDetected(String shipId) {
+    String mapKey =
+        shipId + shipAppComponent.getShipSector() + shipAppComponent.getShipDirection() + wallFollowMode.name();
+
+    int count = stepStateCounter.getOrDefault(mapKey, 0) + 1;
+    stepStateCounter.put(mapKey, count);
+
+    // sonst wächst die Map unendlich
+    if (stepStateCounter.size() > 100) {
+      stepStateCounter.clear();
+    }
+
+    return count >= 3;
+  }
+
   private void refreshScanAndRadar(String shipId) {
     scan(shipId);
 
@@ -367,55 +389,82 @@ public class ShipAppService {
     shipAppComponent.setRadarResponse(radarResponse);
   }
 
-  private boolean wallFollowLeft(String shipId) {
+  private void wallFollowLeft(String shipId) {
     System.out.println("start wall follow left");
     refreshScanAndRadar(shipId);
+
+    boolean foundCirculation = isLoopDetected(shipId);
 
     boolean isForwardCenterBlocked = forwardCenterBlocked.getOrDefault(shipId, false);
 
     shipAppComponent.calculateNavigableDirections();
 
+    // === SONDERFALL ===, da Schiff ist in Kreisbewegung
+    if (foundCirculation) {
+      handleShipCirculation(shipId);
+      return;
+    }
+
+    // === NORMALFALL ===, also bevor das Schiff sich in einer Kreisbewegung gesetzt hat.
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
       forwardCenterBlocked.put(shipId, false);
 
+      Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
     }
 
-    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(),
-                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+    if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Center.getKey())
+        && !isForwardCenterBlocked)) {
       // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward +
       // Center nicht erneut gewählt werden
       forwardCenterBlocked.put(shipId, true);
 
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
       forwardCenterBlocked.put(shipId, false);
+
+      Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
     }
 
+    Helper.sleepForMillis(delayMillis);
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-    return shipAppComponent.driveableToShipGoalDirection();
+    shipAppComponent.driveableToShipGoalDirection();
   }
 
-  private boolean wallFollowRight(String shipId) {
+  private void wallFollowRight(String shipId) {
     System.out.println("start wall follow right");
 
     refreshScanAndRadar(shipId);
 
+    boolean foundCirculation = isLoopDetected(shipId);
+
     boolean isForwardCenterBlocked = forwardCenterBlocked.getOrDefault(shipId, false);
 
     shipAppComponent.calculateNavigableDirections();
 
+    // === SONDERFALL ===, da Schiff ist in Kreisbewegung
+    if (foundCirculation) {
+      handleShipCirculation(shipId);
+      return;
+    }
+
+    // === NORMALFALL ===, also bevor das Schiff sich in einer Kreisbewegung gesetzt hat.
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Right.getKey())) {
       forwardCenterBlocked.put(shipId, false);
 
+      Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
     }
 
     if ((shipAppComponent.driveableToDirection(Course.Forward.getKey(),
@@ -425,23 +474,35 @@ public class ShipAppService {
       forwardCenterBlocked.put(shipId, true);
 
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
     }
 
     if (shipAppComponent.driveableToDirection(Course.Forward.getKey(), Rudder.Left.getKey())) {
       forwardCenterBlocked.put(shipId, false);
 
+      Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
-      return shipAppComponent.driveableToShipGoalDirection();
+      shipAppComponent.driveableToShipGoalDirection();
+      return;
 
     }
 
     navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
-    return shipAppComponent.driveableToShipGoalDirection();
+    shipAppComponent.driveableToShipGoalDirection();
 
   }
+
+  private void handleShipCirculation(String shipId) {
+    forwardCenterBlocked.put(shipId, true);
+
+    Helper.sleepForMillis(delayMillis);
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+    Helper.sleepForMillis(delayMillis);
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+    shipAppComponent.driveableToShipGoalDirection();
+  }
+
 }
-
-
-
-
