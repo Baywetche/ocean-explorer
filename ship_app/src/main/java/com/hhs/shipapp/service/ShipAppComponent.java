@@ -173,13 +173,31 @@ public class ShipAppComponent {
 
   // ===== Autopilot =====
   public void driveableToShipGoalDirection() {
+    System.out.println("=== Direction Debug ===");
+    System.out.println("Ship Direction:       " + shipDirection.getX() + ", " + shipDirection.getY());
+    System.out.println("Goal Direction:       " + shipGoalDirection.getX() + ", " + shipGoalDirection.getY());
+    System.out.println("Negated Goal Dir:     " + (-shipGoalDirection.getX()) + ", " + (-shipGoalDirection.getY()));
+    System.out.println("------------------------");
+
     if (shipDirection.equals(shipGoalDirection)) {
+      System.out.println("Match: FORWARD");
       driveableToShipGoalDirection = ShipStraightOnDirection.Forward;
     }
 
-    if (shipDirection.getX() == -1 * shipGoalDirection.getX() && shipDirection.getY() == -1 * shipGoalDirection.getY()) {
+    else if (shipDirection.getX() == -shipGoalDirection.getX()
+        && shipDirection.getY() == -shipGoalDirection.getY()) {
+      System.out.println("Match: BACKWARD");
       driveableToShipGoalDirection = ShipStraightOnDirection.Backward;
     }
+    else {
+      System.out.println("Match: Disabled");
+      driveableToShipGoalDirection = ShipStraightOnDirection.Disabled;
+    }
+
+
+    System.out.println("Resulting driveableToShipGoalDirection = " + driveableToShipGoalDirection);
+    System.out.println("========================\n");
+
   }
 
   public boolean isShipBlocked() {
@@ -247,25 +265,11 @@ public class ShipAppComponent {
     }
   }
 
-  public boolean isShipFacingWest(){
+  public boolean isShipFacingWest() {
     Vec2D shipGoalDirection = ShipGoalDirection.WEST.getKey();
 
     return shipGoalDirection.getX() == shipDirection.getX() && shipGoalDirection.getY() == shipDirection.getY();
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   //
