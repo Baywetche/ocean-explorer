@@ -177,7 +177,7 @@ public class ShipAppComponent {
       driveableToShipGoalDirection = ShipStraightOnDirection.Forward;
     }
 
-    if (shipGoalDirection.getX() == -1 * shipDirection.getX() && shipGoalDirection.getY() == -1 * shipDirection.getY()) {
+    if (shipDirection.getX() == -1 * shipGoalDirection.getX() && shipDirection.getY() == -1 * shipGoalDirection.getY()) {
       driveableToShipGoalDirection = ShipStraightOnDirection.Backward;
     }
   }
