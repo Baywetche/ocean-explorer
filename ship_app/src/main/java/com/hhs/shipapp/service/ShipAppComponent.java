@@ -173,31 +173,15 @@ public class ShipAppComponent {
 
   // ===== Autopilot =====
   public void driveableToShipGoalDirection() {
-    System.out.println("=== Direction Debug ===");
-    System.out.println("Ship Direction:       " + shipDirection.getX() + ", " + shipDirection.getY());
-    System.out.println("Goal Direction:       " + shipGoalDirection.getX() + ", " + shipGoalDirection.getY());
-    System.out.println("Negated Goal Dir:     " + (-shipGoalDirection.getX()) + ", " + (-shipGoalDirection.getY()));
-    System.out.println("------------------------");
-
     if (shipDirection.equals(shipGoalDirection)) {
-      System.out.println("Match: FORWARD");
       driveableToShipGoalDirection = ShipStraightOnDirection.Forward;
     }
-
-    else if (shipDirection.getX() == -shipGoalDirection.getX()
-        && shipDirection.getY() == -shipGoalDirection.getY()) {
-      System.out.println("Match: BACKWARD");
+    else if (shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == -shipGoalDirection.getY()) {
       driveableToShipGoalDirection = ShipStraightOnDirection.Backward;
     }
     else {
-      System.out.println("Match: Disabled");
       driveableToShipGoalDirection = ShipStraightOnDirection.Disabled;
     }
-
-
-    System.out.println("Resulting driveableToShipGoalDirection = " + driveableToShipGoalDirection);
-    System.out.println("========================\n");
-
   }
 
   public boolean isShipBlocked() {
@@ -213,13 +197,10 @@ public class ShipAppComponent {
                                       .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
                                       .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
 
-    if (shipBlockingSector.isPresent()) {
-      System.out.println("ShipBlockingSector: " + shipBlockingSector.get());
-    }
     return shipBlockingSector;
   }
 
-  public boolean driveableToDirection(String course, String rudder) {
+  public boolean driveableWithCommand(String course, String rudder) {
     RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
 
     String drive2 = course + "_" + rudder;
