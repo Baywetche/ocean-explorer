@@ -1,0 +1,9 @@
+# Default ignored files
+.idea/
+
+# alles mit '.iml' endet
+*.iml
+
+# build outputs
+target/
+lib/target
