@@ -1,6 +1,8 @@
 package com.hhs.shipapp.service;
 
 import com.hhs.lib.model.*;
+import com.hhs.shipapp.connection.ShipClientConnection;
+import com.hhs.shipapp.connection.ShipConnectionManager;
 import com.hhs.shipapp.models.RadarResponse;
 import com.hhs.shipapp.models.ShipEntityState;
 import com.hhs.shipapp.models.ShipMessage;
@@ -17,35 +19,25 @@ import java.util.*;
 @Service
 public class ShipAppService {
 
+  private final ShipConnectionManager shipConnectionManager;
   private final ShipAppImpl shipAppImpl;
   private final ShipTransportMessage shipTransportMessage;
   private final ShipAppComponent shipAppComponent;
   private final Set<String> checkedShipIds = new HashSet<>();
 
   private final int delayMillis = 500;
-  private final int resolveBlockingDelayMillis = 2500;
   private WallFollowMode wallFollowMode = WallFollowMode.LEFT;
   private final Map<String, Boolean> forwardCenterBlocked = new HashMap<>();
   private final Map<String, Integer> stepStateCounter = new HashMap<>();
 
-
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
 
   public ShipAppService(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
-                        Map<String, ShipEntityState> shipEntityStateMap) {
+      Map<String, ShipEntityState> shipEntityStateMap, ShipConnectionManager shipConnectionManager) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
     this.shipAppComponent = new ShipAppComponent(this.shipTransportMessage, shipEntityStateMap);
-  }
-
-  private void ensureConnectedToShipServer() {
-    if (!shipAppImpl.getConnectionState()) {
-      shipAppImpl.connectShipClientToShipServer();
-
-      if (!shipAppImpl.getConnectionState()) {
-        log.info("connection to ship server failed");
-      }
-    }
+    this.shipConnectionManager = shipConnectionManager;
   }
 
   /**
@@ -61,8 +53,6 @@ public class ShipAppService {
     if (dx < -1 || dx > 1 || dy < -1 || dy > 1) {
       return "unerwartete Richtungseingabe: " + "(" + dx + ", " + dy + ")";
     }
-
-    ensureConnectedToShipServer();
 
     Vec2D sector = new Vec2D(x, y);
     Vec2D direction = new Vec2D(dx, dy);
@@ -116,8 +106,6 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public RadarResponse radar(String shipId) {
-    ensureConnectedToShipServer();
-
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -128,7 +116,11 @@ public class ShipAppService {
     }
 
     // Radar-Befehl an Server senden
-    List<ShipMessage> shipMessages = shipAppImpl.radar();
+    ShipClientConnection clientConnection = shipConnectionManager.get(shipId);
+
+
+
+    List<ShipMessage> shipMessages = shipAppImpl.radar(shipId);
     if (shipMessages == null || shipMessages.isEmpty()) {
       throw new IllegalStateException("No response received from radar command");
     }
@@ -154,8 +146,6 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungsproblemen oder ungültiger Antwort
    */
   public ScanResponse scan(String shipId) {
-    ensureConnectedToShipServer();
-
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -166,7 +156,7 @@ public class ShipAppService {
     }
 
     // Scan-Befehl an den Server senden
-    List<ShipMessage> shipMessages = shipAppImpl.scan();
+    List<ShipMessage> shipMessages = shipAppImpl.scan(shipId);
     if (shipMessages == null || shipMessages.isEmpty()) {
       throw new IllegalStateException("No response received from scan command");
     }
@@ -191,8 +181,6 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungsproblemen
    */
   public NavigateResponse navigate(String shipId, String course, String rudder) {
-    ensureConnectedToShipServer();
-
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -203,7 +191,7 @@ public class ShipAppService {
     }
 
     // Navigation ausführen
-    List<ShipMessage> shipMessages = shipAppImpl.navigate(course, rudder);
+    List<ShipMessage> shipMessages = shipAppImpl.navigate(shipId, course, rudder);
     if (shipMessages == null || shipMessages.isEmpty()) {
       throw new IllegalStateException("No response received from navigate command");
     }
@@ -227,9 +215,8 @@ public class ShipAppService {
       shipAppComponent.saveShipSector();
 
       return new NavigateResponse(shipAppComponent.getShipDirection().getX(),
-                                  shipAppComponent.getShipDirection().getY());
-    }
-    else {
+          shipAppComponent.getShipDirection().getY());
+    } else {
       // Bei Crash: Verbindung beenden
       exit(shipId);
 
@@ -246,8 +233,6 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungsproblemen
    */
   public boolean exit(String shipId) {
-    ensureConnectedToShipServer();
-
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -261,7 +246,7 @@ public class ShipAppService {
     shipTransportMessage.removeShipData(shipId);
 
     // Exit-Befehl an den Server senden und Verbindung schließen
-    boolean success = shipAppImpl.exit();
+    boolean success = shipAppImpl.exit(shipId);
 
     // entfernen von shipId von checkedShipIds
     checkedShipIds.remove(shipId);
@@ -328,8 +313,7 @@ public class ShipAppService {
             navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
             continue;
           }
-        }
-        else {
+        } else {
           if (shipAppComponent.isShipBlocked()) {
             handleCollisionWhileMoving_West(shipId);
             continue;
@@ -352,7 +336,7 @@ public class ShipAppService {
 
   private boolean driveableTo_WestSeaBoundary() {
     return shipAppComponent.getDriveableShipGoalDirection() != ShipStraightOnDirection.Disabled && shipAppComponent.getShipSector()
-                                                                                                                   .getX() != 0;
+        .getX() != 0;
   }
 
   private void handleCollisionWhileMoving_West(String shipId) {
@@ -395,8 +379,7 @@ public class ShipAppService {
 
           navigate(shipId, ShipStraightOnDirection.Forward.name(), Rudder.Center.getKey());
           continue;
-        }
-        else {
+        } else {
           if (shipAppComponent.isShipBlocked()) {
             handleCollisionWhileMoving_South(shipId);
             continue;
@@ -444,9 +427,8 @@ public class ShipAppService {
 
   private boolean driveableTo_SouthSeaBoundary() {
     return shipAppComponent.getDriveableShipGoalDirection() != ShipStraightOnDirection.Disabled && shipAppComponent.getShipSector()
-                                                                                                                   .getY() != 0;
+        .getY() != 0;
   }
-
 
   //  Autopilot - Hilfsmethoden
   private void startFollowWall(String shipId) {
@@ -466,8 +448,7 @@ public class ShipAppService {
           wallFollowRight(shipId);
         }
       }
-    }
-    else {
+    } else {
       wallFollowMode = WallFollowMode.RIGHT;
       wallFollowRight(shipId);
     }
@@ -475,7 +456,7 @@ public class ShipAppService {
 
   private boolean isCirculationMovementDetected(String shipId) {
     String mapKey =
-            shipId +
+        shipId +
             shipAppComponent.getShipSector() +
             shipAppComponent.getShipDirection() +
             wallFollowMode.name();
@@ -565,7 +546,7 @@ public class ShipAppService {
     }
 
     if ((shipAppComponent.driveableWithCommand(Course.Forward.getKey(),
-                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+        Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
       // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward +
       // Center nicht erneut gewählt werden
       forwardCenterBlocked.put(shipId, true);
@@ -594,7 +575,7 @@ public class ShipAppService {
 
     boolean isForwardCenterBlocked = forwardCenterBlocked.getOrDefault(shipId, false);
 
-//    shipAppComponent.calculateNavigableDirections();
+    //    shipAppComponent.calculateNavigableDirections();
 
     // === SONDERFALL ===, da Schiff ist in Kreisbewegung
     if (foundCirculation) {
@@ -613,7 +594,7 @@ public class ShipAppService {
     }
 
     if ((shipAppComponent.driveableWithCommand(Course.Forward.getKey(),
-                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+        Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
       // Forward + Center wurde gerade gefahren – bis ein Forward + Left oder Forward + Right erfolgt, darf Forward +
       // Center nicht erneut gewählt werden
       forwardCenterBlocked.put(shipId, true);

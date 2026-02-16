@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hhs.lib.model.Sector;
 import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.connection.ShipClientConnection;
+import com.hhs.shipapp.connection.ShipConnectionManager;
 import com.hhs.shipapp.models.Direction;
 import com.hhs.shipapp.models.ShipMessage;
 import com.hhs.shipapp.models.enums.Commands;
@@ -20,9 +21,8 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class ShipAppImpl implements ShipApp {
-
-  private final ShipClientConnection shipClientConnection;
-  private ShipClientConnection clientConnection;
+  
+  private final ShipConnectionManager connectionManager;
   private ResponseManager responseManager;
 
   @Override
@@ -31,6 +31,8 @@ public class ShipAppImpl implements ShipApp {
     ShipMessage msg =
         ShipMessage.builder().cmd(Commands.launch).name(name).sector(new Sector(sector)).typ(Typ.ship).dir(new Direction(shipDirection))
             .build();
+    
+    ShipClientConnection clientConnection = connectionManager.createNewConnection();
     clientConnection.sendMessage2Server(msg);
 
     try {
@@ -38,7 +40,9 @@ public class ShipAppImpl implements ShipApp {
       List<String> responses = clientConnection.receiveMessagesFromServer();
       ShipMessage launchedResponse = responseManager.launchedResponse(responses.getFirst());
       ShipMessage movedResponse = responseManager.move2dResponse(responses.getLast());
-
+      
+      String shipId = launchedResponse.getId();
+      connectionManager.put(shipId, clientConnection);
       messages.add(launchedResponse);
       messages.add(movedResponse);
     } catch (InterruptedException | JsonProcessingException e) {
@@ -48,14 +52,18 @@ public class ShipAppImpl implements ShipApp {
   }
 
   @Override
-  public List<ShipMessage> navigate(String course, String rudder) {
+  public List<ShipMessage> navigate(String shipId, String course, String rudder) {
     List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.navigate).course(getCourse(course)).rudder(getRudder(rudder)).build();
+    System.out.println("msg: " + msg);
+    ShipClientConnection clientConnection = connectionManager.get(shipId);
     clientConnection.sendMessage2Server(msg);
+    System.out.println("clientConnectin: " + clientConnection);
 
     try {
       Thread.sleep(50);
       List<String> responses = clientConnection.receiveMessagesFromServer();
+      System.out.println("responses: " + responses);
       messages.add(!responses.getFirst().contains("\"cmd\":\"crash\"")
           ? responseManager.move2dResponse(responses.getFirst())
           : responseManager.crashResponse(responses.getFirst()));
@@ -64,6 +72,65 @@ public class ShipAppImpl implements ShipApp {
     }
     return messages;
   }
+
+  @Override
+  public List<ShipMessage> radar(String shipId) {
+    List<ShipMessage> messages = new ArrayList<>();
+    ShipMessage msg = ShipMessage.builder().cmd(Commands.radar).build();
+
+    ShipClientConnection clientConnection = connectionManager.get(shipId);
+    clientConnection.sendMessage2Server(msg);
+
+    try {
+      Thread.sleep(25);
+      List<String> responses = clientConnection.receiveMessagesFromServer();
+      messages.add(responseManager.radarResponse(responses.getFirst()));
+    } catch (InterruptedException | JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return messages;
+  }
+
+  @Override
+  public boolean isClientConnectetToShipServer(String shipId) {
+    return connectionManager.get(shipId).isConnected();
+  }
+
+  @Override
+  public List<ShipMessage> scan(String shipId) {
+    List<ShipMessage> messages = new ArrayList<>();
+    ShipMessage msg = ShipMessage.builder().cmd(Commands.scan).build();
+    ShipClientConnection clientConnection = connectionManager.get(shipId);
+    clientConnection.sendMessage2Server(msg);
+
+    try {
+      Thread.sleep(25);
+      List<String> responses = clientConnection.receiveMessagesFromServer();
+      ShipMessage scanResponse = responseManager.scanResponse(responses.getFirst());
+      messages.add(scanResponse);
+    } catch (InterruptedException | JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return messages;
+  }
+
+  @Override
+  public boolean exit(String shipId) {
+    ShipMessage msg = ShipMessage.builder().cmd(Commands.exit).build();
+    ShipClientConnection clientConnection = connectionManager.get(shipId);
+    clientConnection.sendMessage2Server(msg);
+
+    boolean resultCloseConnection = clientConnection.closeConnection();
+    try {
+      if (resultCloseConnection) {
+        connectionManager.remove(shipId);
+      }
+      return resultCloseConnection;
+    }catch (Exception e) {
+      return false;
+    }
+  }
+
 
   private Course getCourse(String course) {
     return switch (course) {
@@ -82,54 +149,4 @@ public class ShipAppImpl implements ShipApp {
     };
   }
 
-  @Override
-  public List<ShipMessage> radar() {
-    List<ShipMessage> messages = new ArrayList<>();
-    ShipMessage msg = ShipMessage.builder().cmd(Commands.radar).build();
-    clientConnection.sendMessage2Server(msg);
-    try {
-      Thread.sleep(25);
-      List<String> responses = clientConnection.receiveMessagesFromServer();
-      ShipMessage shipMessage = responseManager.radarResponse(responses.getFirst());
-      messages.add(shipMessage);
-    } catch (InterruptedException | JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-    return messages;
-  }
-
-  @Override
-  public boolean getConnectionState() {
-    return shipClientConnection.getClientConnectionState();
-  }
-
-  @Override
-  public void connectShipClientToShipServer() {
-    shipClientConnection.connect();
-  }
-
-  @Override
-  public List<ShipMessage> scan() {
-    List<ShipMessage> messages = new ArrayList<>();
-    ShipMessage msg = ShipMessage.builder().cmd(Commands.scan).build();
-    clientConnection.sendMessage2Server(msg);
-
-    try {
-      Thread.sleep(25);
-      List<String> responses = clientConnection.receiveMessagesFromServer();
-      ShipMessage scanResponse = responseManager.scanResponse(responses.getFirst());
-      messages.add(scanResponse);
-    } catch (InterruptedException | JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-    return messages;
-  }
-
-  @Override
-  public boolean exit() {
-    ShipMessage msg = ShipMessage.builder().cmd(Commands.exit).build();
-    clientConnection.sendMessage2Server(msg);
-
-    return shipClientConnection.closeConnection();
-  }
 }

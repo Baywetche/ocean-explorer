@@ -91,7 +91,7 @@ public class ShipClientConnection implements InitializingBean {
 
   public void sendMessage2Server(ShipMessage message) {
     if (!connected) {
-      log.warn("Not connected to server");
+      log.warn("Not connected to server jet.");
       connect();
     }
     try {
@@ -104,7 +104,7 @@ public class ShipClientConnection implements InitializingBean {
     }
   }
 
-  public boolean getClientConnectionState(){
+  public boolean isConnected(){
     return connected && toServer != null;
   }
 

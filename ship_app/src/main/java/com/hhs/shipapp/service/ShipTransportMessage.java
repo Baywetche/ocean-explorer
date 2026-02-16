@@ -52,7 +52,7 @@ public class ShipTransportMessage {
                                                      .uri("/findSectorData")
                                                      .retrieve().body(boolean.class));
 
-    System.out.println("Antwort vom ShipBaseServer: " + "sector exist: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "sector exist: " + response);
 
     return response;
   }
@@ -63,7 +63,7 @@ public class ShipTransportMessage {
                                                      .uri("/saveShipData")
                                                      .body(ship).retrieve().body(boolean.class));
 
-    System.out.println("Antwort vom ShipBaseServer: " + "saving shipData successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "saving shipData successful: " + response);
 
     return response;
   }
@@ -86,7 +86,7 @@ public class ShipTransportMessage {
                                                           .build())
                               .retrieve().body(Ship.class);
 
-    System.out.println("Antwort vom ShipBaseServer: " + "searching for shipData successful: " + response.toString());
+//    System.out.println("Antwort vom ShipBaseServer: " + "searching for shipData successful: " + response.toString());
 
     return response;
   }
@@ -98,7 +98,7 @@ public class ShipTransportMessage {
                                                              .build())
                                  .retrieve().body(Boolean.class);
 
-    System.out.println("Antwort vom ShipBaseServer: delete shipData by shipId: " + shipId + " successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: delete shipData by shipId: " + shipId + " successful: " + response);
     return Boolean.TRUE.equals(response);
   }
 
@@ -109,7 +109,7 @@ public class ShipTransportMessage {
                                                              .build())
                                  .retrieve().body(Boolean.class);
 
-    System.out.println("Antwort vom ShipBaseServer: isShipIdExists: " + shipId + ": " + response);
+//    System.out.println("Antwort vom ShipBaseServer: isShipIdExists: " + shipId + ": " + response);
     return Boolean.TRUE.equals(response);
   }
 
@@ -131,7 +131,7 @@ public class ShipTransportMessage {
                                                      .uri("/saveRoutePlan")
                                                      .body(routePlan).retrieve().body(boolean.class));
 
-    System.out.println("Antwort vom ShipBaseServer: " + "saving  RoutePlan successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "saving  RoutePlan successful: " + response);
 
     return response;
   }
@@ -142,7 +142,7 @@ public class ShipTransportMessage {
                                                              .build())
                                  .retrieve().body(Boolean.class);
 
-    System.out.println("Antwort vom ShipBaseServer: delete all route plan successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: delete all route plan successful: " + response);
     return Boolean.TRUE.equals(response);
   }
 
