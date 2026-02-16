@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hhs.shipapp.models.ShipMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,8 +14,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
-public class ShipClientConnection implements InitializingBean {
+public class ShipClientConnection {
 
   private final String host;
   private final int port;
@@ -31,11 +28,6 @@ public class ShipClientConnection implements InitializingBean {
   public ShipClientConnection(@Value("${ocean.server.host:localhost}") String host, @Value("${ocean.server.port:8150}") int port) {
     this.host = host;
     this.port = port;
-  }
-
-  @Override
-  public void afterPropertiesSet() throws Exception {
-    connect();
   }
 
   public void connect() {
@@ -104,7 +96,7 @@ public class ShipClientConnection implements InitializingBean {
     }
   }
 
-  public boolean isConnected(){
+  public boolean isConnected() {
     return connected && toServer != null;
   }
 

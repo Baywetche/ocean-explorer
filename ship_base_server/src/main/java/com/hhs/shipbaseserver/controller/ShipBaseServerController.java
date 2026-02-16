@@ -41,14 +41,14 @@ public class ShipBaseServerController {
   public ResponseEntity<Boolean> saveSectorData(@RequestBody SectorData sectorData) {
     //    System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorDataService.save(sectorData);
+    return ResponseEntity.ok(sectorDataService.save(sectorData));
   }
 
   @PutMapping(value = "/updateSectorData")
   public ResponseEntity<Boolean> updateSectorData(@RequestBody SectorData sectorData) {
     //    System.out.println("Empfangen: " + sectorData.toString());
 
-    return sectorDataService.update(sectorData);
+    return ResponseEntity.ok(sectorDataService.update(sectorData));
   }
 
   /**
@@ -60,7 +60,7 @@ public class ShipBaseServerController {
   public ResponseEntity<SectorData> findSectorData(@RequestParam int sectorX, @RequestParam int sectorY) {
     System.out.println("findSectorData for: (" + sectorX + ", " + sectorY + ")");
 
-    return sectorDataService.findBySector(sectorX, sectorY);
+    return ResponseEntity.ok(sectorDataService.findBySector(sectorX, sectorY));
   }
 
   /**

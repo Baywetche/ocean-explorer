@@ -2,7 +2,6 @@ package com.hhs.shipbaseserver.dao;
 
 import com.hhs.lib.model.SectorData;
 import com.hhs.shipbaseserver.repository.SectorDataRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,14 +22,14 @@ public class SectorDataService {
    * @param sectorData the sector data to be saved
    * @return {@code true} if the entity was saved or updated, {@code false} if an entry already existed
    */
-  public ResponseEntity<Boolean> save(SectorData sectorData) {
+  public boolean save(SectorData sectorData) {
 
     List<SectorData> existingSectors = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
 
     // Kein Eintrag vorhanden → neu speichern
     if (existingSectors.isEmpty()) {
       sectorDataRepository.save(sectorData);
-      return ResponseEntity.ok(true);
+      return true;
     }
 
     Long existingId = existingSectors.getFirst().getId();
@@ -38,7 +37,7 @@ public class SectorDataService {
     if (existingOptional.isEmpty()) {
       // wenn Datensatz wurde zwischenzeitlich gelöscht
       sectorDataRepository.save(sectorData);
-      return ResponseEntity.ok(true);
+      return true;
     }
 
     SectorData existing = existingOptional.get();
@@ -48,11 +47,11 @@ public class SectorDataService {
       existing.setHeight(sectorData.getHeight());
 
       sectorDataRepository.save(existing);
-      return ResponseEntity.ok(true);
+      return true;
     }
 
     // Eintrag existiert und ist bereits vollständig
-    return ResponseEntity.ok(false);
+    return false;
   }
 
   /**
@@ -66,28 +65,28 @@ public class SectorDataService {
    *
    * @return {@code true} if sector found, {@code false} if sector not found
    * */
-  public ResponseEntity<SectorData> findBySector(int sectorX, int sectorY) {
+  public SectorData findBySector(int sectorX, int sectorY) {
     boolean exists = !sectorDataRepository.findBySectorXAndSectorY(sectorX, sectorY).isEmpty();
 
     SectorData sectorData = sectorDataRepository.findBySectorXAndSectorY(sectorX, sectorY).getFirst();
     if (exists) {
-      return ResponseEntity.ok(sectorData);
+      return sectorData;
     }
 
-    return ResponseEntity.ok(new SectorData());
+    return new SectorData();
   }
 
   /**
    * Updates sector data in DB
    *
    * @return {@code true} if sector found and updated successfully, {@code false} if sector not found*/
-  public ResponseEntity<Boolean> update(SectorData sectorData) {
+  public boolean update(SectorData sectorData) {
     try {
-      Long id = getSectorDataIdByShipId(sectorData);
+      Long id = findId4GivenSectorData(sectorData);
       Optional<SectorData> sectorDataOptional = sectorDataRepository.findById(id);
 
       if (sectorDataOptional.isEmpty()) {
-        return ResponseEntity.ok(false);
+        return false;
       }
 
       SectorData existing = sectorDataOptional.get();
@@ -95,9 +94,9 @@ public class SectorDataService {
       existing.setStddev(sectorData.getStddev());
 
       sectorDataRepository.save(existing);
-      return ResponseEntity.ok(true);
+      return true;
     } catch (ClassNotFoundException e) {
-      return ResponseEntity.ok(false);
+      return false;
     }
   }
 
@@ -105,7 +104,7 @@ public class SectorDataService {
    * Searches for an id for given sector data.
    *
    * @return id, if sector exist, otherwise throws exception*/
-  private Long getSectorDataIdByShipId(SectorData sectorData) throws ClassNotFoundException {
+  private Long findId4GivenSectorData(SectorData sectorData) throws ClassNotFoundException {
     List<SectorData> sectorDataList = sectorDataRepository.findBySectorXAndSectorY(sectorData.getSectorX(), sectorData.getSectorY());
     if (sectorDataList.isEmpty()) {
       throw new ClassNotFoundException("sector data not exist");

@@ -55,15 +55,12 @@ public class ShipAppImpl implements ShipApp {
   public List<ShipMessage> navigate(String shipId, String course, String rudder) {
     List<ShipMessage> messages = new ArrayList<>();
     ShipMessage msg = ShipMessage.builder().cmd(Commands.navigate).course(getCourse(course)).rudder(getRudder(rudder)).build();
-    System.out.println("msg: " + msg);
     ShipClientConnection clientConnection = connectionManager.get(shipId);
     clientConnection.sendMessage2Server(msg);
-    System.out.println("clientConnectin: " + clientConnection);
 
     try {
-      Thread.sleep(50);
+      Thread.sleep(35);
       List<String> responses = clientConnection.receiveMessagesFromServer();
-      System.out.println("responses: " + responses);
       messages.add(!responses.getFirst().contains("\"cmd\":\"crash\"")
           ? responseManager.move2dResponse(responses.getFirst())
           : responseManager.crashResponse(responses.getFirst()));

@@ -111,6 +111,7 @@ public class ShipAppComponent {
     });
   }
 
+  //TODO es muss mit id gemacht werden
   public void updateSectorData() {
     SectorData sectorData = new SectorData();
     sectorData.setShipId(shipId);
@@ -214,10 +215,10 @@ public class ShipAppComponent {
       default -> throw new IllegalStateException("Unexpected value: " + drive2);
     };
 
-    System.out.println("shipDirection: " + shipDirection);
+ /*   System.out.println("shipDirection: " + shipDirection);
     System.out.println("direction: " + direction);
     System.out.println("navigableDirection: " + navigableDirections);
-
+*/
     return navigableDirections.contains(direction);
   }
 

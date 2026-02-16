@@ -106,6 +106,9 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungs- oder Ausführungsproblemen
    */
   public RadarResponse radar(String shipId) {
+    // aktualisieren shipId
+    shipAppComponent.setShipId(shipId);
+
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -117,8 +120,6 @@ public class ShipAppService {
 
     // Radar-Befehl an Server senden
     ShipClientConnection clientConnection = shipConnectionManager.get(shipId);
-
-
 
     List<ShipMessage> shipMessages = shipAppImpl.radar(shipId);
     if (shipMessages == null || shipMessages.isEmpty()) {
@@ -146,6 +147,9 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungsproblemen oder ungültiger Antwort
    */
   public ScanResponse scan(String shipId) {
+    // aktualisieren shipId
+    shipAppComponent.setShipId(shipId);
+
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -181,6 +185,9 @@ public class ShipAppService {
    * @throws IllegalStateException    bei Verbindungsproblemen
    */
   public NavigateResponse navigate(String shipId, String course, String rudder) {
+    // aktualisieren shipId
+    shipAppComponent.setShipId(shipId);
+
     // ShipId-Prüfung für eine shipId nur einmal ausführen, um die Rechenzeit zu sparen
     if (!checkedShipIds.contains(shipId)) {
       if (!shipTransportMessage.existsShipIdInDB(shipId)) {
@@ -201,7 +208,7 @@ public class ShipAppService {
     if (success) {
       shipAppComponent.setShipMessages(shipMessages);
 
-      // ship sector und direction aktualisieren
+      // ship sector, direction und relativeCoordinateSystem aktualisieren
       shipAppComponent.updateShipSectorAndDirectionAndCoordinateSystem();
 
       // State aktualisieren
