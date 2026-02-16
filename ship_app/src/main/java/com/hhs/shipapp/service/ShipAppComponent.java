@@ -40,7 +40,7 @@ public class ShipAppComponent {
   private RadarResponse radarResponse;
 
   private Vec2D shipGoalDirection;
-  private ShipStraightOnDirection driveableToShipGoalDirection;
+  private ShipStraightOnDirection driveableShipGoalDirection;
 
   private Optional<Vec2D> shipBlockingSector;
 
@@ -172,15 +172,15 @@ public class ShipAppComponent {
   }
 
   // ===== Autopilot =====
-  public void driveableToShipGoalDirection() {
+  public void updateDriveableShipGoalDirection() {
     if (shipDirection.equals(shipGoalDirection)) {
-      driveableToShipGoalDirection = ShipStraightOnDirection.Forward;
+      driveableShipGoalDirection = ShipStraightOnDirection.Forward;
     }
     else if (shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == -shipGoalDirection.getY()) {
-      driveableToShipGoalDirection = ShipStraightOnDirection.Backward;
+      driveableShipGoalDirection = ShipStraightOnDirection.Backward;
     }
     else {
-      driveableToShipGoalDirection = ShipStraightOnDirection.Disabled;
+      driveableShipGoalDirection = ShipStraightOnDirection.Disabled;
     }
   }
 
