@@ -22,7 +22,7 @@ public class ShipTransportMessage {
                                 .uri("/saveSectorData")
                                 .body(sectorData).retrieve().body(String.class);
 
-    System.out.println("Antwort vom ShipBaseServer: " + "saving sectorData successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "saving sectorData successful: " + response);
   }
 
   public boolean updateSectorData(SectorData sectorData) {
@@ -30,7 +30,7 @@ public class ShipTransportMessage {
                                                      .uri("/updateSectorData")
                                                      .body(sectorData).retrieve().body(boolean.class));
 
-    System.out.println("Antwort vom ShipBaseServer: " + "updating sectorData successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "updating sectorData successful: " + response);
 
     return response;
   }
@@ -74,7 +74,7 @@ public class ShipTransportMessage {
                                                      .body(ship)
                                                      .retrieve().body(boolean.class));
 
-    System.out.println("Antwort vom ShipBaseServer: " + "updating shipData successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "updating shipData successful: " + response);
 
     return response;
   }
@@ -119,7 +119,7 @@ public class ShipTransportMessage {
                                 .uri("/saveShipSector")
                                 .body(shipSector).retrieve().body(Boolean.class);
 
-    System.out.println("Antwort vom ShipBaseServer: " + "saving ShipSector successful: " + response);
+//    System.out.println("Antwort vom ShipBaseServer: " + "saving ShipSector successful: " + response);
 
     return response.equals(Boolean.TRUE);
   }

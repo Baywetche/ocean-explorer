@@ -35,7 +35,6 @@ public class ShipAppComponent {
   private List<Vec2D> allowedShipSurroundingSectors;
 
   private Set<Vec2D> navigableDirections;
-  private Set<Sector> notNavigableDirections;
 
   private RadarResponse radarResponse;
 
@@ -43,6 +42,8 @@ public class ShipAppComponent {
   private ShipStraightOnDirection driveableShipGoalDirection;
 
   private Optional<Vec2D> shipBlockingSector;
+
+  private RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipSector);
 
   private final Logger log = LoggerFactory.getLogger(ShipAppComponent.class);
 
@@ -54,11 +55,13 @@ public class ShipAppComponent {
     this.shipEntityStateMap = shipEntityStateMap;
   }
 
-  public void updateShipSectorAndDirection() {
+  public void updateShipSectorAndDirectionAndCoordinateSystem() {
     ShipMessage shipMessage = shipMessages.getFirst();
 
     shipSector = new Vec2D(shipMessage.getSector().getVec2()[0], shipMessage.getSector().getVec2()[1]);
     shipDirection = new Vec2D(shipMessage.getDir().getVec2()[0], shipMessage.getDir().getVec2()[1]);
+
+    relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
   }
 
   public void fillShipEntityStateMap() {
@@ -115,9 +118,6 @@ public class ShipAppComponent {
     sectorData.setSectorY(shipSector.getY());
     sectorData.setDepth(shipMessages.getFirst().getDepth());
     sectorData.setStddev(shipMessages.getFirst().getStddev());
-
-    log.info("SectorData updated | shipId={} | sectorX={} | sectorY={} | depth={} | stddev={}", sectorData.getShipId(),
-             sectorData.getSectorX(), sectorData.getSectorY(), sectorData.getDepth(), sectorData.getStddev());
 
     shipTransportMessage.updateSectorData(sectorData);
   }
@@ -201,8 +201,6 @@ public class ShipAppComponent {
   }
 
   public boolean driveableWithCommand(String course, String rudder) {
-    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-
     String drive2 = course + "_" + rudder;
 
     Vec2D direction = switch (drive2) {
@@ -216,6 +214,10 @@ public class ShipAppComponent {
       default -> throw new IllegalStateException("Unexpected value: " + drive2);
     };
 
+    System.out.println("shipDirection: " + shipDirection);
+    System.out.println("direction: " + direction);
+    System.out.println("navigableDirection: " + navigableDirections);
+
     return navigableDirections.contains(direction);
   }
 
@@ -228,16 +230,10 @@ public class ShipAppComponent {
   }
 
   public void calculateNavigableDirections() {
-    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
-
     navigableDirections = new HashSet<>();
 
     // alle blockierten Richtungen sammeln
-    Set<Vec2D> blocked = new HashSet<>();
-
-    for (Sector sector : radarResponse.getNotNavigable()) {
-      blocked.add(new Vec2D(sector.getVec2()[0], sector.getVec2()[1]));
-    }
+    Set<Vec2D> blocked = new HashSet<>(updateNotNavigableDirections());
 
     for (Vec2D dir : relativeCoordinateSystem.getCoordinates()) {
       if (!blocked.contains(dir)) {
@@ -251,6 +247,21 @@ public class ShipAppComponent {
 
     return shipGoalDirection.getX() == shipDirection.getX() && shipGoalDirection.getY() == shipDirection.getY();
   }
+
+  private List<Vec2D> updateNotNavigableDirections() {
+    Set<Sector> notNavigableDirections = new HashSet<>(radarResponse.getNotNavigable());
+
+    notNavigableDirections.add(new Sector(relativeCoordinateSystem.getCoordinates().get(2))); // east
+    notNavigableDirections.add(new Sector(relativeCoordinateSystem.getCoordinates().get(6))); // west
+
+    List<Vec2D> forbiddenDirections = new ArrayList<>();
+    for(Sector sector : notNavigableDirections) {
+      forbiddenDirections.add(new Vec2D(sector.getVec2()[0], sector.getVec2()[1]));
+    }
+
+    return forbiddenDirections;
+  }
+
 
 
   //
@@ -270,7 +281,6 @@ public class ShipAppComponent {
   }
 
   public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
-    RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipDirection);
     return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
   }
 
@@ -293,15 +303,5 @@ public class ShipAppComponent {
                                                shipSector.getY() + shipDirection.getY() + shipDirection.getY());
 
     log.info("nextAllowedShipSector: " + newGoalShipSectorAfterBlocking);
-  }
-
-  private void calcNotNavigableDirections() {
-    notNavigableDirections = new HashSet<>(radarResponse.getNotNavigable());
-
-    RelativeCoordinateSystem relCoord = new RelativeCoordinateSystem(shipDirection);
-
-    notNavigableDirections.add(new Sector(relCoord.getCoordinates().get(2))); // east
-    notNavigableDirections.add(new Sector(relCoord.getCoordinates().get(6))); // west
-
   }
 }
