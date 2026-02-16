@@ -111,7 +111,6 @@ public class ShipAppComponent {
     });
   }
 
-  //TODO es muss mit id gemacht werden
   public void updateSectorData() {
     SectorData sectorData = new SectorData();
     sectorData.setShipId(shipId);
