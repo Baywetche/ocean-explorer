@@ -25,7 +25,7 @@ public class ShipAppService {
   private final ShipAppComponent shipAppComponent;
   private final Set<String> checkedShipIds = new HashSet<>();
 
-  private final int delayMillis = 500;
+  private final int delayMillis = 100;
   private WallFollowMode wallFollowMode = WallFollowMode.LEFT;
   private final Map<String, Boolean> forwardCenterBlocked = new HashMap<>();
   private final Map<String, Integer> stepStateCounter = new HashMap<>();
@@ -33,7 +33,7 @@ public class ShipAppService {
   private static final Logger log = LoggerFactory.getLogger(ShipAppService.class);
 
   public ShipAppService(ShipAppImpl shipAppImpl, ShipTransportMessage shipTransportMessage,
-                        Map<String, ShipEntityState> shipEntityStateMap, ShipConnectionManager shipConnectionManager) {
+      Map<String, ShipEntityState> shipEntityStateMap, ShipConnectionManager shipConnectionManager) {
     this.shipAppImpl = shipAppImpl;
     this.shipTransportMessage = shipTransportMessage;
     this.shipAppComponent = new ShipAppComponent(this.shipTransportMessage, shipEntityStateMap);
@@ -222,9 +222,8 @@ public class ShipAppService {
       shipAppComponent.saveShipSector();
 
       return new NavigateResponse(shipAppComponent.getShipDirection().getX(),
-                                  shipAppComponent.getShipDirection().getY());
-    }
-    else {
+          shipAppComponent.getShipDirection().getY());
+    } else {
       // Bei Crash: Verbindung beenden
       exit(shipId);
 
@@ -283,35 +282,26 @@ public class ShipAppService {
     shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
     shipAppComponent.setDriveableShipGoalDirection(ShipStraightOnDirection.Disabled);
 
-    //TODO ich muss mit shipDirection (-1,-1) am west- oder südrand kommen
-
-    boolean shipReachedWestOrSouthSeaBoundary = moveShipTo_SouthWestSeaBoundary(shipId);
+    boolean shipReachedWestOrSouthSeaBoundary = moveShipTo_SouthOrWestSeaBoundary(shipId);
 
     if (shipReachedWestOrSouthSeaBoundary) {
       if (shipAppComponent.isShipAtWestBoundary()) {
         moveShipTo_SouthSeaBoundary(shipId);
       }
+
       if (shipAppComponent.isShipAtSouthBoundary()) {
-        moveShipTo_WestSeaBoundary(shipId);
+        boolean reachedWest = moveShipTo_WestSeaBoundary(shipId);
+        if (reachedWest) {
+          bringShipToStartPosition(shipId);
+        }
       }
     }
-
-/*    boolean hasShipReached_WestSeaBoundary = moveShipToWestSeaBoundary(shipId);
-
-    if (hasShipReached_WestSeaBoundary) {
-      boolean hasShipReached_AutopilotPosition = moveShipToAutopilotPosition(shipId);
-
-      if (hasShipReached_AutopilotPosition) {
-        System.out.println("AutoPilot: Move ship to autopilot position succeed: " + hasShipReached_AutopilotPosition);
-      }
-
-    }*/
 
     return result;
   }
 
   // Autopilot - to southWest
-  private boolean moveShipTo_SouthWestSeaBoundary(String shipId) {
+  private boolean moveShipTo_SouthOrWestSeaBoundary(String shipId) {
     shipAppComponent.setShipGoalDirection(ShipGoalDirection.SOUTH_WEST.getKey());
 
     refreshShip(shipId);
@@ -322,7 +312,7 @@ public class ShipAppService {
       if (driveableTo_SouthWestSeaBoundary()) {
         if (shipAppComponent.getDriveableShipGoalDirection().equals(ShipStraightOnDirection.Forward)) {
           if (shipAppComponent.isShipBlocked()) {
-            handleCollisionWhileMoving_West(shipId);
+            handleCollisionWhileMoving_SouthWest(shipId);
             continue;
           }
 
@@ -341,13 +331,30 @@ public class ShipAppService {
     return shipAppComponent.getShipSector().getX() == 0 || shipAppComponent.getShipSector().getY() == 0;
   }
 
+  private void handleCollisionWhileMoving_SouthWest(String shipId) {
+    Helper.sleepForMillis(delayMillis);
+    navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+    startFollowWall(shipId);
+
+    while (shipAppComponent.isShipBlocked()) {
+      Helper.sleepForMillis(delayMillis);
+      navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+
+      startFollowWall(shipId);
+
+      if (driveableTo_SouthWestSeaBoundary()) {
+        break;
+      }
+
+    }
+  }
+
   private boolean driveableTo_SouthWestSeaBoundary() {
     return
         shipAppComponent.getDriveableShipGoalDirection() != ShipStraightOnDirection.Disabled &&
-            (shipAppComponent.getShipSector().getX() != 0 ||
-            shipAppComponent.getShipSector().getY() != 0);
+            (shipAppComponent.getShipSector().getX() != 0 || shipAppComponent.getShipSector().getY() != 0);
   }
-
 
   // Autopilot - to west
   private boolean moveShipTo_WestSeaBoundary(String shipId) {
@@ -356,7 +363,25 @@ public class ShipAppService {
     refreshShip(shipId);
 
     while (!shipAppComponent.isShipAtWestBoundary()) {
+      System.out.println("ship ist hier gefangen: + moveShipTo_WestSeaBoundary()");
+
       refreshShip(shipId);
+
+      if (driveableTo_SouthSeaBoundary()) {
+        if (shipAppComponent.getDriveableShipGoalDirection().equals(ShipStraightOnDirection.Forward)) {
+          if (shipAppComponent.isShipBlocked()) {
+            handleCollisionWhileMoving_South(shipId);
+            continue;
+          }
+
+          recoverFromCirculationMovement(shipId);
+
+          if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Center.getKey())) {
+            navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+            continue;
+          }
+        }
+      }
 
       startFollowWall(shipId);
     }
@@ -364,9 +389,37 @@ public class ShipAppService {
     return shipAppComponent.getShipSector().getX() == 0;
   }
 
+  private void bringShipToStartPosition(String shipId) {
+    System.out.println("will bring ship to start!");
+
+    if (shipAppComponent.isShipAtWestBoundary()) {
+      if (4 <= shipAppComponent.getShipSector().getY() && shipAppComponent.getShipSector().getY() <= 8) {
+        if (shipAppComponent.getShipDirection().equals(ShipGoalDirection.WEST.getKey())) {
+          Helper.sleepForMillis(delayMillis);
+          navigate(shipId, Course.Backward.getKey(), Rudder.Left.getKey());
+
+          Helper.sleepForMillis(delayMillis);
+          navigate(shipId, Course.Backward.getKey(), Rudder.Left.getKey());
+
+          while (shipAppComponent.getShipSector().getY() > 2) {
+            Helper.sleepForMillis(delayMillis);
+            navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
+          }
+
+          Helper.sleepForMillis(delayMillis);
+          navigate(shipId, Course.Backward.getKey(), Rudder.Left.getKey());
+
+          Helper.sleepForMillis(delayMillis);
+          navigate(shipId, Course.Backward.getKey(), Rudder.Right.getKey());
+        }
+      }
+    }
+
+  }
+
   private boolean driveableTo_WestSeaBoundary() {
     return shipAppComponent.getDriveableShipGoalDirection() != ShipStraightOnDirection.Disabled && shipAppComponent.getShipSector()
-                                                                                                                   .getX() != 0;
+        .getX() != 0;
   }
 
   private void handleCollisionWhileMoving_West(String shipId) {
@@ -395,7 +448,24 @@ public class ShipAppService {
     refreshShip(shipId);
 
     while (!shipAppComponent.isShipAtSouthBoundary()) {
+      System.out.println("ship ist hier gefangen: + moveShipTo_SouthSeaBoundary()");
       refreshShip(shipId);
+
+      if (driveableTo_SouthSeaBoundary()) {
+        if (shipAppComponent.getDriveableShipGoalDirection().equals(ShipStraightOnDirection.Forward)) {
+          if (shipAppComponent.isShipBlocked()) {
+            handleCollisionWhileMoving_South(shipId);
+            continue;
+          }
+
+          recoverFromCirculationMovement(shipId);
+
+          if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Center.getKey())) {
+            navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
+            continue;
+          }
+        }
+      }
 
       startFollowWall(shipId);
     }
@@ -416,7 +486,7 @@ public class ShipAppService {
 
   private boolean driveableTo_SouthSeaBoundary() {
     return shipAppComponent.getDriveableShipGoalDirection() != ShipStraightOnDirection.Disabled && shipAppComponent.getShipSector()
-                                                                                                                   .getY() != 0;
+        .getY() != 0;
   }
 
   //  Autopilot - Hilfsmethoden
@@ -426,16 +496,23 @@ public class ShipAppService {
     ShipGoalDirection goalDirection = ShipGoalDirection.fromVec2D(shipAppComponent.getShipGoalDirection());
 
     Objects.requireNonNull(goalDirection, "goalDirection must not be null");
-    switch (goalDirection) {
-      case WEST, SOUTH_WEST -> {
-        wallFollowMode = WallFollowMode.LEFT;
-        wallFollowLeft(shipId);
-      }
-      case SOUTH -> {
-        wallFollowMode = WallFollowMode.RIGHT;
-        wallFollowRight(shipId);
+    if (!shipAppComponent.isShipAtNorthtBoundary()){
+      switch (goalDirection) {
+        case WEST, SOUTH_WEST -> {
+          wallFollowMode = WallFollowMode.LEFT;
+          wallFollowLeft(shipId);
+        }
+        case SOUTH -> {
+          wallFollowMode = WallFollowMode.RIGHT;
+          wallFollowRight(shipId);
+        }
       }
     }
+    else {
+      wallFollowMode = WallFollowMode.RIGHT;
+      wallFollowRight(shipId);
+    }
+
   }
 
   private boolean isCirculationMovementDetected(String shipId) {
@@ -521,6 +598,7 @@ public class ShipAppService {
 
     // === NORMALFALL ===, also bevor das Schiff sich in einer Kreisbewegung gesetzt hat.
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Left.getKey())) {
+      forwardCenterBlocked.put(shipId, false);
       Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
@@ -528,13 +606,14 @@ public class ShipAppService {
     }
 
     if ((shipAppComponent.driveableWithCommand(Course.Forward.getKey(),
-                                               Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
+        Rudder.Center.getKey()) && !isForwardCenterBlocked)) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
       return;
     }
 
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Right.getKey())) {
+      forwardCenterBlocked.put(shipId, false);
       Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
@@ -561,6 +640,8 @@ public class ShipAppService {
 
     // === NORMALFALL ===, also bevor das Schiff sich in einer Kreisbewegung gesetzt hat.
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Right.getKey())) {
+      forwardCenterBlocked.put(shipId, false);
+
       Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
@@ -568,13 +649,15 @@ public class ShipAppService {
     }
 
     if ((shipAppComponent.driveableWithCommand(Course.Forward.getKey(),
-                                               Rudder.Center.getKey())) && !isForwardCenterBlocked) {
+        Rudder.Center.getKey())) && !isForwardCenterBlocked) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
       return;
     }
 
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Left.getKey())) {
+      forwardCenterBlocked.put(shipId, false);
+
       Helper.sleepForMillis(delayMillis);
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
       shipAppComponent.updateDriveableShipGoalDirection();
