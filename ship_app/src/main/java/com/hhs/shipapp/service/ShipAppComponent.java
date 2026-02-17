@@ -229,6 +229,10 @@ public class ShipAppComponent {
     return shipSector.getX() == 0;
   }
 
+  public boolean isShipAtSouthWestBoundary() {
+    return shipSector.getX() == 0 && shipSector.getY() == 0;
+  }
+
   public void calculateNavigableDirections() {
     navigableDirections = new HashSet<>();
 
