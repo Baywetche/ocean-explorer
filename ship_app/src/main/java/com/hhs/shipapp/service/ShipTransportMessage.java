@@ -125,6 +125,17 @@ public class ShipTransportMessage {
   }
 
 
+  /* about ship autopilot */
+  public boolean saveRoutePlan(RoutePlan routePlan) {
+    boolean response = Boolean.TRUE.equals(restClient.post()
+                                                     .uri("/saveRoutePlan")
+                                                     .body(routePlan).retrieve().body(boolean.class));
+
+//    System.out.println("Antwort vom ShipBaseServer: " + "saving  RoutePlan successful: " + response);
+
+    return response;
+  }
+
   public boolean clearRoutePlan() {
     Boolean response = restClient.delete().uri(
                                      uriBuilder -> uriBuilder.path("/deleteAllRoutePlan")
