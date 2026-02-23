@@ -337,6 +337,8 @@ public class ShipAppService {
 
           navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
           Helper.sleepForMillis(delayMillis);
+
+          refreshShip(shipId);
         }
       }
 
@@ -349,6 +351,15 @@ public class ShipAppService {
           navigate(shipId, Course.Backward.getKey(), Rudder.Left.getKey());
           Helper.sleepForMillis(delayMillis);
 
+          refreshShip(shipId);
+
+        }
+
+        if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Right.getKey())) {
+          navigate(shipId, Course.Forward.getKey(), Rudder.Right.getKey());
+          Helper.sleepForMillis(delayMillis);
+
+          refreshShip(shipId);
         }
 
         if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Right.getKey())) {
@@ -358,6 +369,10 @@ public class ShipAppService {
 
           // Zielrichtung umschalten
           shipAppComponent.setShipGoalDirection(ShipGoalDirection.SOUTH.getKey());
+
+          targetLaneX.merge(shipId, 1, Integer::sum);
+
+          refreshShip(shipId);
         }
       }
     }
@@ -373,6 +388,8 @@ public class ShipAppService {
 
           navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
           Helper.sleepForMillis(delayMillis);
+
+          refreshShip(shipId);
         }
       }
 
@@ -382,6 +399,8 @@ public class ShipAppService {
 
           navigate(shipId, Course.Backward.getKey(), Rudder.Right.getKey());
           Helper.sleepForMillis(delayMillis);
+
+          refreshShip(shipId);
         }
 
         if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Left.getKey())) {
@@ -391,6 +410,7 @@ public class ShipAppService {
 
           shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
 
+          refreshShip(shipId);
         }
       }
     }
@@ -436,6 +456,8 @@ public class ShipAppService {
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Left.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
       Helper.sleepForMillis(delayMillis);
+
+      refreshShip(shipId);
     }
 
     if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Right.getKey())) {
@@ -443,6 +465,7 @@ public class ShipAppService {
       Helper.sleepForMillis(delayMillis);
     }
   }
+
 
   private void followSouthLane(String shipId) {
 
@@ -460,9 +483,19 @@ public class ShipAppService {
       return;
     }
 
-    if (shipAppComponent.driveableWithCommand(Course.Forward.getKey(), Rudder.Center.getKey())) {
+    // 3. Normal vorwärts nach Norden
+    if (!forwardCenterTemporarilyBlocked.getOrDefault(shipId, false) && shipAppComponent.driveableWithCommand(
+        Course.Forward.getKey(), Rudder.Center.getKey())) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Center.getKey());
       Helper.sleepForMillis(delayMillis);
+    }
+
+    // 4. von der Spur absichtlich ausweichen. Forward-Center erst erlauben, wenn wir wirklich ausgewichen sind
+    if (shipAppComponent.getShipSector().getX() == laneX && isBypassActive.getOrDefault(shipId, false)) {
+      bypassLane(shipId);
+
+      forwardCenterTemporarilyBlocked.put(shipId, false);
+      isBypassActive.put(shipId, false);
     }
   }
 
@@ -511,8 +544,7 @@ public class ShipAppService {
         return;
       }
 
-
-      // 4. auch vorne blockiert -> lokal ausweichen
+      // 4. auch vorne blockiert -> ausweichen
       if (shipAppComponent.isShipBlocked()) {
         bypassObstacleNorth(shipId);
         return;
@@ -624,13 +656,15 @@ public class ShipAppService {
     }
 
     if (shipAppComponent.driveableWithCommand(Course.Backward.getKey(), Rudder.Center.getKey())) {
-
+      // Forward-Center sperren
+      forwardCenterTemporarilyBlocked.put(shipId, true);
       navigate(shipId, Course.Backward.getKey(), Rudder.Center.getKey());
       Helper.sleepForMillis(delayMillis);
+
+      // noch kein erfolgreiches Umfahren!
+      isBypassActive.put(shipId, true);
     }
   }
-
-  private void followSouth(String shipId) {}
 
 
   private void handleCollisionWhileMoving_North(String shipId) {
