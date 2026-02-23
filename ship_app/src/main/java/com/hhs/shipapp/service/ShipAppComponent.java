@@ -224,7 +224,7 @@ public class ShipAppComponent {
     return shipSector.getX() == 0;
   }
 
-  public boolean isShipAtNorthtBoundary() {
+  public boolean isShipAtNorthBoundary() {
     return shipSector.getY() == 99;
   }
 
