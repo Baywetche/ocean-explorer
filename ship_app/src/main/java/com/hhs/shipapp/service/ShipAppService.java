@@ -299,7 +299,7 @@ public class ShipAppService {
 
     shipAppComponent.setShipGoalDirection(ShipGoalDirection.NORTH.getKey());
 
-    while (shipAppComponent.getShipSector().getY() <= 98) {
+//    while (shipAppComponent.getShipSector().getY() <= 98) {
 
       refreshShip(shipId);
 
@@ -314,9 +314,11 @@ public class ShipAppService {
       if (shipAppComponent.getShipGoalDirection() == ShipGoalDirection.SOUTH.getKey()) {
         followSouthLane(shipId);
       }
-    }
+//    }
 
-    return null;
+    refreshShip(shipId);
+
+    return shipAppComponent.buildAutoPilotData();
   }
 
   private void handleTurnAtBorders(String shipId) {
@@ -481,7 +483,7 @@ public class ShipAppService {
       return;
     }
 
-    if (isShipOrientedToSouthWest(shipId)) {
+    if (isShipOrientedToSouthWest()) {
       navigate(shipId, Course.Forward.getKey(), Rudder.Left.getKey());
       Helper.sleepForMillis(delayMillis);
     }
@@ -600,8 +602,8 @@ public class ShipAppService {
     }
   }
 
-  private boolean isShipOrientedToSouthWest(String shipId) {
-    return shipAppComponent.getShipDirection() == ShipGoalDirection.SOUTH_WEST.getKey();
+  private boolean isShipOrientedToSouthWest() {
+    return shipAppComponent.getShipDirection().equals(ShipGoalDirection.SOUTH_WEST.getKey());
   }
 
   private void bypassObstacleNorth(String shipId) {
