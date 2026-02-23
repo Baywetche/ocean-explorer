@@ -228,10 +228,6 @@ public class ShipAppComponent {
     return shipSector.getY() == 99;
   }
 
-  public boolean isShipAtSouthWestBoundary() {
-    return shipSector.getX() == 0 && shipSector.getY() == 0;
-  }
-
   public void calculateNavigableDirections() {
     navigableDirections = new HashSet<>();
 
@@ -243,12 +239,6 @@ public class ShipAppComponent {
         navigableDirections.add(dir);
       }
     }
-  }
-
-  public boolean isShipFacingWest() {
-    Vec2D shipGoalDirection = ShipGoalDirection.WEST.getKey();
-
-    return shipGoalDirection.getX() == shipDirection.getX() && shipGoalDirection.getY() == shipDirection.getY();
   }
 
   private List<Vec2D> updateNotNavigableDirections() {
@@ -293,92 +283,6 @@ public class ShipAppComponent {
     return sectorDataList;
   }
 
-  private enum SeaSession {
-    NORTH_EAST_SESSION, DIAGONAL_SESSION, SOUTH_WEST,
 
-  }
 
-  public SeaSession findSeaSessionBasedOnShipSector() {
-    List<Integer> northEastSessionList4Y = new ArrayList<>();
-    for (int i = 0; i < 40; i++) {
-      northEastSessionList4Y.add(60 + i);
-    }
-
-    if (shipSector.getX() < 50) {
-      for (int i : northEastSessionList4Y) {
-        if (shipSector.getY() > i) {
-          return SeaSession.NORTH_EAST_SESSION;
-        }
-      }
-
-    }
-
-    List<Integer> diagonalSessionListTopBorder4X = new ArrayList<>();
-    List<Integer> diagonalSessionListTopBorder4Y = new ArrayList<>();
-
-    List<Integer> diagonalSessionListBottomBorder4X = new ArrayList<>();
-    List<Integer> diagonalSessionListBottomBorder4Y = new ArrayList<>();
-
-    for (int i = 0; i < 85; i++) {
-      diagonalSessionListTopBorder4X.add(i);
-      diagonalSessionListTopBorder4Y.add(15 + i);
-
-    }
-
-    for (int i = 30; i < 100; i++) {
-      diagonalSessionListBottomBorder4X.add(i);
-    }
-
-    for (int yTop : diagonalSessionListTopBorder4Y) {
-      if (shipSector.getY() < yTop) {
-        for (int xBottom : diagonalSessionListBottomBorder4X) {
-          if (shipSector.getX() < xBottom) {
-          }
-        }
-      }
-    }
-
-    return SeaSession.SOUTH_WEST;
-  }
-
-  //
-  public DriveCommands computeDriveCommandsToShipGoalDirection() {
-    if (shipDirection.equals(shipGoalDirection)) {
-      return DriveCommands.Forward_Center;
-    }
-
-    boolean isOppositeDirection =
-        shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == shipGoalDirection.getY();
-
-    if (isOppositeDirection) {
-      return DriveCommands.Backward_Center;
-    }
-
-    return null;
-  }
-
-  public int calculateMinimumStepsToGoalDirection(Vec2D goalDirection) {
-    return relativeCoordinateSystem.getCoordinates().indexOf(goalDirection);
-  }
-
-  private void navigate(String shipId, String backward, String center) {}
-
-  public void calcAllowedSurroundingSectors() {
-    allowedShipSurroundingSectors = new ArrayList<>();
-
-    calculateNavigableDirections();
-
-    for (Vec2D vec2D : navigableDirections) {
-      allowedShipSurroundingSectors.add(new Vec2D(shipSector.getX() + vec2D.getX(), shipSector.getY() + vec2D.getY()));
-    }
-
-    log.info("allowedSurroundingFields: " + allowedShipSurroundingSectors);
-  }
-
-  private void calcNewGoalShipSectorAfterBlocking() {
-    newGoalShipSectorAfterBlocking = new Vec2D(shipSector.getX() + shipDirection.getX() + shipDirection.getX(),
-                                               shipSector.getY() + shipDirection.getY() + shipDirection.getY());
-
-    log.info("nextAllowedShipSector: " + newGoalShipSectorAfterBlocking);
-  }
 }

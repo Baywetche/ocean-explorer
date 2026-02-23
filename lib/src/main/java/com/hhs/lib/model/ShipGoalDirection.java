@@ -4,7 +4,8 @@ public enum ShipGoalDirection {
   NORTH(new Vec2D(0, 1)),
   SOUTH(new Vec2D(0, -1)),
   SOUTH_WEST(new Vec2D(-1, -1)),
-  WEST(new Vec2D(-1, 0));
+  WEST(new Vec2D(-1, 0)),
+  NORTH_WEST(new Vec2D(-1, 1));
 
   private Vec2D key;
 
