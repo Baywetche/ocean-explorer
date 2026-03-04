@@ -44,7 +44,6 @@ public class ShipAppComponent {
   private ShipStraightOnDirection driveableShipGoalDirection;
   private RelativeCoordinateSystem relativeCoordinateSystem = new RelativeCoordinateSystem(shipSector);
 
-
   public ShipAppComponent(ShipTransportMessage shipTransportMessage, Map<String, ShipEntityState> shipEntityStateMap) {
     this.shipTransportMessage = shipTransportMessage;
     this.shipEntityStateMap = shipEntityStateMap;
@@ -77,7 +76,7 @@ public class ShipAppComponent {
 
     for (Echo echo : echoList) {
       Vec2D orientation = new Vec2D(echo.getSector().getVec2()[0] - shipSector.getX(),
-                                    echo.getSector().getVec2()[1] - shipSector.getY());
+          echo.getSector().getVec2()[1] - shipSector.getY());
 
       if (!isSectorNavigable(echo)) {
         verboteneRichtungen.add(new Sector(orientation));
@@ -119,9 +118,9 @@ public class ShipAppComponent {
 
   public void updateShipEntityState(String course, String rudder) {
     Vec2D newShipSector = new Vec2D(shipMessages.getFirst().getSector().getVec2()[0],
-                                    shipMessages.getFirst().getSector().getVec2()[1]);
+        shipMessages.getFirst().getSector().getVec2()[1]);
     Vec2D newShipDirection = new Vec2D(shipMessages.getFirst().getDir().getVec2()[0],
-                                       shipMessages.getFirst().getDir().getVec2()[1]);
+        shipMessages.getFirst().getDir().getVec2()[1]);
 
     shipSector = newShipSector;
     shipDirection = newShipDirection;
@@ -167,14 +166,24 @@ public class ShipAppComponent {
   }
 
   // ===== Autopilot =====
+  public boolean driveableTo_SouthWestSeaBoundary() {
+    return driveableShipGoalDirection != ShipStraightOnDirection.Disabled && (shipSector.getX() != 0 || shipSector.getY() != 0);
+  }
+
+  public boolean isShipOrientedToSouthWest() {
+    return shipDirection.equals(ShipGoalDirection.SOUTH_WEST.getKey());
+  }
+
+  public boolean driveableTo_SouthSeaBoundary() {
+    return driveableShipGoalDirection != ShipStraightOnDirection.Disabled && shipSector.getY() != 0;
+  }
+
   public void updateDriveableShipGoalDirection() {
     if (shipDirection.equals(shipGoalDirection)) {
       driveableShipGoalDirection = ShipStraightOnDirection.Forward;
-    }
-    else if (shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == -shipGoalDirection.getY()) {
+    } else if (shipDirection.getX() == -shipGoalDirection.getX() && shipDirection.getY() == -shipGoalDirection.getY()) {
       driveableShipGoalDirection = ShipStraightOnDirection.Backward;
-    }
-    else {
+    } else {
       driveableShipGoalDirection = ShipStraightOnDirection.Disabled;
     }
   }
@@ -187,10 +196,10 @@ public class ShipAppComponent {
     Vec2D nextSector = new Vec2D(shipSector.getX() + shipDirection.getX(), shipSector.getY() + shipDirection.getY());
 
     shipBlockingSector = radarResponse.getEchos().stream().filter(
-                                          echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water).map(Echo::getSector)
-                                      .map(Sector::getVec2)
-                                      .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
-                                      .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
+            echo -> echo.getGround() != Ground.Harbour && echo.getGround() != Ground.Water).map(Echo::getSector)
+        .map(Sector::getVec2)
+        .filter(vec -> vec[0] == nextSector.getX() && vec[1] == nextSector.getY())
+        .map(vec -> new Vec2D(vec[0], vec[1])).findFirst();
 
     return shipBlockingSector;
   }
@@ -282,7 +291,5 @@ public class ShipAppComponent {
 
     return sectorDataList;
   }
-
-
 
 }
