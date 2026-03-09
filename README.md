@@ -16,7 +16,7 @@
 
 # run ShipApplication
 
-## 📬 Send Requests to Ocean Explorer Server using Postman
+## 📬 Send Requests to ShipApp using Postman
 
 You can test the **Ocean Explorer server** using Postman by following these steps:
 
@@ -55,6 +55,26 @@ Open Postman on your computer and create a new request.
 
 ![img_6.png](img_6.png)
 ---
+
+
+## 📬 Send Requests to ShipBaseServer using Postman
+
+### 1. GET allSectorInfo request
+![img_7.png](img_7.png)
+---
+
+### 2. GET getAllShipData request
+![img_8.png](img_8.png)
+---
+
+### 3. GET getShipRoute request
+![img_9.png](img_9.png)
+---
+
+### 4. GET getShipData request
+![img_10.png](img_10.png)
+---
+
 
 
 ### 💡 Tips
