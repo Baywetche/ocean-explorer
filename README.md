@@ -78,32 +78,32 @@ You can test the **Ocean Explorer server** using Postman by following these step
 
 ### 1. Launch request
 
-![Launch Postman](img_1.png)
+![Launch Postman](imgs/img_1.png)
 ---
 
 ### 2. Scan request
 
-![Scan Server](img_2.png)
+![Scan Server](imgs/img_2.png)
 ---
 
 ### 3. radar request
 
-![img_3.png](img_3.png)
+![img_3.png](imgs/img_3.png)
 ---
 
 ### 4. navigate request
 
-![img_4.png](img_4.png)
+![img_4.png](imgs/img_4.png)
 ---
 
 ### 5. exit request
 
-![img_5.png](img_5.png)
+![img_5.png](imgs/img_5.png)
 ---
 
 ### 6. autoPilot request
 
-![img_6.png](img_6.png)
+![img_6.png](imgs/img_6.png)
 ---
 
 # Send Requests to ShipBaseServer
@@ -112,22 +112,22 @@ You can test the **Ocean Explorer server** using Postman by following these step
 
 ### 1. GET allSectorInfo request
 
-![img_7.png](img_7.png)
+![img_7.png](imgs/img_7.png)
 ---
 
 ### 2. GET getAllShipData request
 
-![img_8.png](img_8.png)
+![img_8.png](imgs/img_8.png)
 ---
 
 ### 3. GET getShipRoute request
 
-![img_9.png](img_9.png)
+![img_9.png](imgs/img_9.png)
 ---
 
 ### 4. GET getShipData request
 
-![img_10.png](img_10.png)
+![img_10.png](imgs/img_10.png)
 ---
 
 ### 💡 Tips
