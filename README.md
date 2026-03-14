@@ -36,6 +36,9 @@ Additionally, the **ShipBaseServer** runs as a **microservice** that collects da
 7. **Client exits the game (`exit`)**  
    The ship is removed from the game by the server.
 
+8. **Client runs autopilot (`autoPilot`)**  
+   The ship navigates autonomously, explores the environment, and collects exploration data while avoiding crashes.
+
 # 🛠️ Technologies Used
 
 1. **Java 21**
