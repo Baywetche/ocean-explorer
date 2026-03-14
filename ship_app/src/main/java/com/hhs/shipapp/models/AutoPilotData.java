@@ -1,5 +1,6 @@
-package com.hhs.lib.model;
+package com.hhs.shipapp.models;
 
+import com.hhs.lib.model.SectorData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,7 +1,6 @@
 package com.hhs.shipapp.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hhs.lib.model.Sector;
 import com.hhs.shipapp.models.enums.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

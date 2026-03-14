@@ -1,6 +1,5 @@
 package com.hhs.shipapp.models;
 
-import com.hhs.lib.model.Vec2D;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

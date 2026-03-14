@@ -1,6 +1,7 @@
 package com.hhs.shipapp.service;
 
 import com.hhs.lib.model.*;
+import com.hhs.shipapp.models.Vec2D;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;

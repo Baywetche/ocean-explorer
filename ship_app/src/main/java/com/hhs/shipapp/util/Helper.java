@@ -1,6 +1,6 @@
 package com.hhs.shipapp.util;
 
-import com.hhs.lib.model.DriveCommands;
+import com.hhs.shipapp.models.enums.DriveCommands;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

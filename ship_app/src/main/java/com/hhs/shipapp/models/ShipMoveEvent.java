@@ -1,6 +1,5 @@
 package com.hhs.shipapp.models;
 
-import com.hhs.lib.model.Vec2D;
 import com.hhs.shipapp.models.enums.Course;
 import com.hhs.shipapp.models.enums.Rudder;
 import lombok.AllArgsConstructor;

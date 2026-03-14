@@ -1,4 +1,6 @@
-package com.hhs.lib.model;
+package com.hhs.shipapp.models.enums;
+
+import com.hhs.shipapp.models.Vec2D;
 
 public enum ShipGoalDirection {
   NORTH(new Vec2D(0, 1)),

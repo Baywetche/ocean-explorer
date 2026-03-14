@@ -1,6 +1,5 @@
 package com.hhs.shipapp.models;
 
-import com.hhs.lib.model.Sector;
 import lombok.Data;
 
 import java.util.List;

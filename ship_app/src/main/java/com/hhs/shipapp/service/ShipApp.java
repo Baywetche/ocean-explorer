@@ -1,6 +1,6 @@
 package com.hhs.shipapp.service;
 
-import com.hhs.lib.model.Vec2D;
+import com.hhs.shipapp.models.Vec2D;
 import com.hhs.shipapp.models.ShipMessage;
 
 import java.util.List;

@@ -1,4 +1,6 @@
-package com.hhs.lib.model;
+package com.hhs.shipapp.models;
+
+import com.hhs.shipapp.models.enums.DriveCommands;
 
 import java.util.ArrayList;
 import java.util.List;

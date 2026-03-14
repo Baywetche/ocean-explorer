@@ -1,4 +1,4 @@
-package com.hhs.lib.model;
+package com.hhs.shipapp.models;
 
 import java.util.Objects;
 

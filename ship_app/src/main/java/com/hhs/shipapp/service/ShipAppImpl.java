@@ -1,8 +1,8 @@
 package com.hhs.shipapp.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.hhs.lib.model.Sector;
-import com.hhs.lib.model.Vec2D;
+import com.hhs.shipapp.models.Sector;
+import com.hhs.shipapp.models.Vec2D;
 import com.hhs.shipapp.connection.ShipClientConnection;
 import com.hhs.shipapp.connection.ShipConnectionManager;
 import com.hhs.shipapp.models.Direction;

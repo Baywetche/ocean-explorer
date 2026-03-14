@@ -1,12 +1,8 @@
 package com.hhs.shipapp.service;
 
 import com.hhs.lib.model.*;
-import com.hhs.shipapp.models.Echo;
-import com.hhs.shipapp.models.RadarResponse;
-import com.hhs.shipapp.models.ShipEntityState;
-import com.hhs.shipapp.models.ShipMessage;
-import com.hhs.shipapp.models.enums.Course;
-import com.hhs.shipapp.models.enums.Rudder;
+import com.hhs.shipapp.models.*;
+import com.hhs.shipapp.models.enums.*;
 import com.hhs.shipapp.util.Helper;
 import lombok.Getter;
 import lombok.Setter;

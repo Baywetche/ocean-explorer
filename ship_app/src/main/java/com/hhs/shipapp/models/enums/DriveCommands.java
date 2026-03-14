@@ -1,4 +1,4 @@
-package com.hhs.lib.model;
+package com.hhs.shipapp.models.enums;
 
 public enum DriveCommands {
   Forward_Center,

@@ -1,7 +1,9 @@
 package com.hhs.shipapp.controller;
 
-import com.hhs.lib.model.*;
+import com.hhs.shipapp.models.AutoPilotData;
+import com.hhs.shipapp.models.NavigateResponse;
 import com.hhs.shipapp.models.RadarResponse;
+import com.hhs.shipapp.models.ScanResponse;
 import com.hhs.shipapp.service.ShipAppService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
